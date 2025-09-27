@@ -19,15 +19,39 @@ class GeminiAIService:
             raise ValueError("GEMINI_API_KEY environment variable is required")
         
         genai.configure(api_key=api_key)
-        # Use a working Gemini model name - try different options
-        try:
-            self.model = genai.GenerativeModel('gemini-pro')
-        except Exception:
-            try:
-                self.model = genai.GenerativeModel('gemini-1.5-pro')  
-            except Exception:
-                self.model = genai.GenerativeModel('models/gemini-pro')
+        # Use Gemini 2.5 Pro model
+        self.model = genai.GenerativeModel('gemini-2.5-pro')
         
+    async def analyze_repository_with_dynamic_scoring(
+        self,
+        repo_data: Dict[str, Any],
+        repo_files: Dict[str, str],
+        persona: str,
+        user_context: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
+        """
+        Generate comprehensive AI analysis with dynamic scoring specific to repository
+        """
+        try:
+            # Prepare enhanced context for dynamic scoring
+            analysis_prompt = self._build_dynamic_analysis_prompt(
+                repo_data, repo_files, persona, user_context
+            )
+            
+            # Get comprehensive Gemini analysis
+            response = await asyncio.to_thread(
+                self.model.generate_content, analysis_prompt
+            )
+            
+            # Parse structured response with dynamic scoring
+            analysis_result = self._parse_dynamic_gemini_response(response.text, repo_data)
+            
+            return analysis_result
+            
+        except Exception as e:
+            print(f"Gemini AI analysis error: {str(e)}")
+            return self._get_fallback_analysis(repo_data, persona)
+
     async def analyze_repository_with_persona(
         self,
         repo_data: Dict[str, Any],
@@ -36,7 +60,7 @@ class GeminiAIService:
         user_context: Dict[str, Any] = None
     ) -> Dict[str, Any]:
         """
-        Generate persona-specific DevOps suggestions using Gemini
+        Generate persona-specific DevOps suggestions using Gemini (legacy method)
         """
         try:
             # Prepare context for Gemini
@@ -233,8 +257,184 @@ Ensure all suggestions are specific to the detected patterns and persona needs.
             }
         ]
     
+    def _build_dynamic_analysis_prompt(
+        self, 
+        repo_data: Dict[str, Any], 
+        repo_files: Dict[str, str], 
+        persona: str, 
+        user_context: Dict[str, Any]
+    ) -> str:
+        """Build comprehensive prompt for dynamic AI analysis"""
+        
+        # Analyze tech stack
+        tech_indicators = {
+            'Python': ['.py', 'requirements.txt', 'setup.py', 'pyproject.toml'],
+            'JavaScript/Node.js': ['package.json', '.js', '.ts', '.jsx', '.tsx'],
+            'Java': ['.java', 'pom.xml', 'build.gradle'],
+            'C#/.NET': ['.cs', '.csproj', '.sln'],
+            'Go': ['.go', 'go.mod'],
+            'Rust': ['.rs', 'Cargo.toml'],
+            'Docker': ['Dockerfile', 'docker-compose.yml'],
+            'Kubernetes': ['.yaml', '.yml', 'k8s', 'kustomization']
+        }
+        
+        detected_techs = []
+        for tech, indicators in tech_indicators.items():
+            if any(
+                any(indicator in filename for indicator in indicators)
+                for filename in repo_files.keys()
+            ):
+                detected_techs.append(tech)
+        
+        tech_stack = ', '.join(detected_techs) if detected_techs else 'General'
+        
+        prompt = f"""
+You are an expert DevOps consultant analyzing a {tech_stack} repository. Provide a comprehensive analysis with dynamic scoring.
+
+REPOSITORY CONTEXT:
+- Name: {repo_data.get('name', 'Unknown')}
+- Description: {repo_data.get('description', 'No description')}
+- Primary Language: {repo_data.get('language', 'Unknown')}
+- Stars: {repo_data.get('stargazers_count', 0)}
+- Forks: {repo_data.get('forks_count', 0)}
+- Tech Stack Detected: {tech_stack}
+
+ANALYSIS PERSONA: {persona}
+
+REPOSITORY FILES STRUCTURE:
+{chr(10).join([f"- {filename}: {content[:100]}..." for filename, content in list(repo_files.items())[:10]])}
+
+REQUIRED OUTPUT FORMAT (JSON):
+{{
+    "devops_score": <integer 0-100 based on actual repository analysis>,
+    "tech_stack": "{tech_stack}",
+    "analysis_summary": "<2-3 sentence summary of repository DevOps maturity>",
+    "strengths": [
+        "<strength 1>",
+        "<strength 2>",
+        "<strength 3>"
+    ],
+    "weaknesses": [
+        "<weakness 1>",
+        "<weakness 2>",
+        "<weakness 3>"
+    ],
+    "suggestions": [
+        {{
+            "category": "<CI/CD|Testing|Security|Documentation|Monitoring|Infrastructure>",
+            "priority": "<High|Medium|Low>",
+            "title": "<actionable title>",
+            "description": "<detailed description>",
+            "implementation_steps": ["<step 1>", "<step 2>", "<step 3>"],
+            "resources": ["<resource 1>", "<resource 2>"],
+            "estimated_effort": "<time estimate>",
+            "business_impact": "<impact description>"
+        }}
+    ],
+    "metrics": {{
+        "ci_cd_score": <0-100>,
+        "testing_score": <0-100>,
+        "security_score": <0-100>,
+        "documentation_score": <0-100>,
+        "code_quality_score": <0-100>
+    }}
+}}
+
+SCORING CRITERIA:
+- Analyze actual repository files and structure
+- Consider tech stack specific best practices
+- Base score on real DevOps maturity indicators
+- Be specific to this repository's context
+- Provide actionable insights for {persona}
+
+Focus on practical, implementable suggestions tailored to the detected technology stack.
+"""
+        return prompt
+
+    def _parse_dynamic_gemini_response(self, response_text: str, repo_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Parse structured Gemini response for dynamic analysis"""
+        try:
+            # Clean the response text
+            clean_text = response_text.strip()
+            
+            # Extract JSON from response
+            json_start = clean_text.find('{')
+            json_end = clean_text.rfind('}') + 1
+            
+            if json_start == -1 or json_end == 0:
+                return self._get_fallback_analysis(repo_data, "DevOps Engineer")
+            
+            json_text = clean_text[json_start:json_end]
+            analysis_data = json.loads(json_text)
+            
+            # Validate and sanitize the response
+            return {
+                "devops_score": max(0, min(100, analysis_data.get('devops_score', 50))),
+                "tech_stack": analysis_data.get('tech_stack', 'General'),
+                "analysis_summary": analysis_data.get('analysis_summary', 'Analysis completed'),
+                "strengths": analysis_data.get('strengths', [])[:5],  # Limit to 5
+                "weaknesses": analysis_data.get('weaknesses', [])[:5],  # Limit to 5
+                "suggestions": analysis_data.get('suggestions', [])[:8],  # Limit to 8
+                "metrics": analysis_data.get('metrics', {
+                    "ci_cd_score": 50,
+                    "testing_score": 50,
+                    "security_score": 50,
+                    "documentation_score": 50,
+                    "code_quality_score": 50
+                }),
+                "generated_at": datetime.utcnow().isoformat(),
+                "error": None
+            }
+            
+        except (json.JSONDecodeError, KeyError) as e:
+            print(f"Error parsing Gemini response: {str(e)}")
+            return self._get_fallback_analysis(repo_data, "DevOps Engineer")
+
+    def _get_fallback_analysis(self, repo_data: Dict[str, Any], persona: str) -> Dict[str, Any]:
+        """Provide fallback analysis when AI fails"""
+        return {
+            "devops_score": 45,
+            "tech_stack": repo_data.get('language', 'General'),
+            "analysis_summary": f"Basic analysis completed for {repo_data.get('name', 'repository')}. AI analysis temporarily unavailable.",
+            "strengths": [
+                "Repository structure is organized",
+                "Contains essential project files",
+                "Active development visible"
+            ],
+            "weaknesses": [
+                "Limited DevOps automation detected",
+                "Testing infrastructure needs improvement",
+                "Documentation could be enhanced"
+            ],
+            "suggestions": [
+                {
+                    "category": "CI/CD",
+                    "priority": "High",
+                    "title": "Implement Continuous Integration",
+                    "description": "Set up automated testing and deployment pipeline",
+                    "implementation_steps": [
+                        "Choose CI/CD platform (GitHub Actions, GitLab CI, etc.)",
+                        "Create workflow configuration",
+                        "Add automated testing"
+                    ],
+                    "resources": ["CI/CD Best Practices Guide", "Platform Documentation"],
+                    "estimated_effort": "1-2 days",
+                    "business_impact": "Reduces deployment risks and improves code quality"
+                }
+            ],
+            "metrics": {
+                "ci_cd_score": 30,
+                "testing_score": 40,
+                "security_score": 50,
+                "documentation_score": 60,
+                "code_quality_score": 45
+            },
+            "generated_at": datetime.utcnow().isoformat(),
+            "error": "AI analysis unavailable, using fallback"
+        }
+    
     def _calculate_devops_score(self, repo_files: Dict[str, str]) -> int:
-        """Calculate DevOps maturity score based on detected patterns"""
+        """Calculate DevOps maturity score based on detected patterns (legacy method)"""
         score = 0
         total_checks = 10
         

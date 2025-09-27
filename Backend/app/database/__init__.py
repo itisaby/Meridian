@@ -145,6 +145,28 @@ def init_db():
         )
     """)
     
+    # AI Analysis table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS ai_analyses (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            repository_name TEXT NOT NULL,
+            repository_url TEXT NOT NULL,
+            repository_full_name TEXT NOT NULL,
+            devops_score REAL,
+            persona_used TEXT,
+            tech_stack TEXT,
+            suggestions TEXT,
+            analysis_summary TEXT,
+            strengths TEXT,
+            weaknesses TEXT,
+            metrics TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            analysis_version TEXT DEFAULT '1.0'
+        )
+    """)
+    
     conn.commit()
     conn.close()
 

@@ -33,9 +33,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const router = useRouter()
 
     // Debug logging to identify the root cause
-    console.log('🔍 NextAuth Debug:', { 
-        status, 
-        hasSession: !!session, 
+    console.log('🔍 NextAuth Debug:', {
+        status,
+        hasSession: !!session,
         sessionUser: session?.user?.name,
         timestamp: new Date().toISOString()
     })
@@ -43,7 +43,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Initialize auth state when session changes
     useEffect(() => {
         console.log('🔧 useEffect triggered with status:', status)
-        
+
         const initAuth = async () => {
             if (status === 'loading') {
                 console.log('NextAuth still loading, keeping isLoading=true')
@@ -87,7 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 setUser(null)
                 setIsAuthenticatedState(false)
             }
-            
+
             setIsLoading(false)
             console.log('🔧 Auth initialization complete')
         }
@@ -106,11 +106,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             // Clear local storage
             localStorage.removeItem('github_token')
-            
+
             // Reset state
             setUser(null)
             setIsAuthenticatedState(false)
-            
+
             // Redirect to home page
             router.push('/')
         } catch (error) {

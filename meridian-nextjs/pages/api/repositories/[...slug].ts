@@ -6,7 +6,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const { method } = req
     const { slug } = req.query
-    
+
     try {
         let url = `${BACKEND_URL}/repositories/`
         const options: RequestInit = {
@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Handle different repository endpoints
         console.log('API Debug:', { slug, isArray: Array.isArray(slug), type: typeof slug })
-        
+
         if (slug && Array.isArray(slug)) {
             if (slug[0] === 'github' && slug[1] === 'repos') {
                 url = `${BACKEND_URL}/repositories/github/repos`
@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 url = `${BACKEND_URL}/repositories/${slug}`
             }
         }
-        
+
         console.log('Final URL:', url)
 
         if (method !== 'GET') {

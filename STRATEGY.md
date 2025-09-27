@@ -3,9 +3,7 @@ Perfect! I understand your vision. You're building a DevOps culture transformati
 
 Immediate Priorities (Next 6-8 hours):
 
-- GitHub Repository Analysis - Show real insights from connected repos
 - AI-Powered Suggestions - The killer feature that sets you apart
-- Enhanced Dashboard - Real metrics, not dummy data
 
 - profile needs to be connected.
 

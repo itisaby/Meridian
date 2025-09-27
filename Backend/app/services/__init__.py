@@ -3,7 +3,8 @@ AI and MCP service implementations
 """
 import asyncio
 from typing import Dict, Any
-from .gemini_service import gemini_service
+# Temporarily comment out gemini_service to fix import issues
+# from .gemini_service import gemini_service
 
 
 class MCPClient:

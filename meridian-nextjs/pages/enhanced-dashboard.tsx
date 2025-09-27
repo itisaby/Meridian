@@ -2,20 +2,36 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useState, useEffect } from 'react'
-import { withAuth } from '../contexts/AuthContext'
+import { withAuth, useAuth } from '../contexts/AuthContext'
 import { Breadcrumb } from '../components/ui/Breadcrumb'
+import { AnalysisModal } from '../components/ui/AnalysisModal'
+import { AnalysisChart } from '../components/ui/AnalysisChart'
+import { RecentActivity } from '../components/ui/RecentActivity'
+import LearningPaths from '../components/ui/LearningPaths'
 import { TokenManager } from '../lib/tokenManager'
-import { 
-    Github, 
-    TrendingUp, 
-    Shield, 
-    GitBranch, 
+import {
+    Github,
+    TrendingUp,
+    Shield,
+    GitBranch,
     Clock,
     Target,
     Zap,
     BookOpen,
-    Award
+    Award,
+    Brain
 } from 'lucide-react'
+
+interface AnalysisHistoryData {
+    analysis_number: number
+    overall_score: number
+    ci_cd_score: number
+    security_score: number
+    documentation_score: number
+    automation_score: number
+    analysis_date: string
+    persona_used: string
+}
 
 interface Repository {
     id: string
@@ -27,7 +43,7 @@ interface Repository {
     forks: number
     updated_at: string
     private: boolean
-    html_url?: string
+    html_url: string
 }
 
 interface DevOpsMetrics {
@@ -61,12 +77,66 @@ interface AIInsights {
 
 function EnhancedDashboard() {
     const router = useRouter()
+    const { user } = useAuth()
     const [repositories, setRepositories] = useState<Repository[]>([])
     const [selectedRepository, setSelectedRepository] = useState<Repository | null>(null)
     const [metrics, setMetrics] = useState<DevOpsMetrics | null>(null)
     const [aiInsights, setAiInsights] = useState<AIInsights | null>(null)
+    const [analysisHistory, setAnalysisHistory] = useState<AnalysisHistoryData[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedPersona, setSelectedPersona] = useState<'Student' | 'Professional' | 'Manager'>('Professional')
+    const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false)
+
+    // Set persona based on user role
+    useEffect(() => {
+        if (user?.role) {
+            switch (user.role) {
+                case 'student':
+                    setSelectedPersona('Student')
+                    break
+                case 'manager':
+                    setSelectedPersona('Manager')
+                    break
+                case 'professional':
+                default:
+                    setSelectedPersona('Professional')
+                    break
+            }
+        }
+    }, [user])
+
+    useEffect(() => {
+        fetchDashboardData()
+    }, [router.query.repo]) // eslint-disable-line react-hooks/exhaustive-deps
+
+    const openAnalysisModal = () => {
+        setIsAnalysisModalOpen(true)
+    }
+
+    const fetchAnalysisHistory = async (repoFullName: string) => {
+        try {
+            const response = await fetch(`/api/ai/analysis-history?repo=${encodeURIComponent(repoFullName)}`, {
+                headers: TokenManager.getAuthHeader()
+            })
+
+            if (response.ok) {
+                const data = await response.json()
+                setAnalysisHistory(data.history || [])
+            }
+        } catch (error) {
+            console.error('Error fetching analysis history:', error)
+        }
+    }
+
+    const closeAnalysisModal = () => {
+        setIsAnalysisModalOpen(false)
+    }
+
+    const handleAnalysisComplete = () => {
+        // Refresh dashboard data after analysis completion
+        fetchDashboardData()
+        setIsAnalysisModalOpen(false)
+    }
 
     useEffect(() => {
         fetchDashboardData()
@@ -75,145 +145,133 @@ function EnhancedDashboard() {
     const fetchDashboardData = async () => {
         try {
             setLoading(true)
-            
-            // Fetch repositories
+
+            // Check if we're looking at a specific repository
+            const targetRepo = router.query.repo as string
+
+            if (targetRepo) {
+                // Fetch enhanced dashboard data for specific repository
+                const dashboardResponse = await fetch(`/api/ai/enhanced-dashboard?repo=${encodeURIComponent(targetRepo)}`, {
+                    headers: TokenManager.getAuthHeader()
+                })
+
+                if (dashboardResponse.ok) {
+                    const dashboardData = await dashboardResponse.json()
+
+                    // Set metrics from the enhanced response
+                    setMetrics(dashboardData.metrics)
+
+                    // Set AI insights if analysis exists
+                    if (dashboardData.analysis) {
+                        setAiInsights({
+                            persona: dashboardData.analysis.persona_used || selectedPersona,
+                            devops_score: dashboardData.analysis.devops_score || 0,
+                            suggestions: dashboardData.analysis.suggestions || [],
+                            analysis_summary: dashboardData.analysis.analysis_summary || 'Analysis completed',
+                            generated_at: dashboardData.analysis_date || new Date().toISOString()
+                        })
+                    } else {
+                        // No analysis available, use basic metrics from repository data
+                        const repoData = dashboardData.repository_data
+                        if (repoData) {
+                            setMetrics(calculateBasicMetrics(repoData))
+                        }
+
+                        setAiInsights({
+                            persona: selectedPersona,
+                            devops_score: 0,
+                            suggestions: [],
+                            analysis_summary: 'No AI analysis available. Run an analysis to see detailed insights.',
+                            generated_at: new Date().toISOString()
+                        })
+                    }
+
+                    // Fetch analysis history
+                    await fetchAnalysisHistory(targetRepo)
+                }
+            }
+
+            // Fetch repositories for the dropdown
             const reposResponse = await fetch('/api/repositories/github/repos', {
                 headers: TokenManager.getAuthHeader()
             })
-            
+
             if (reposResponse.ok) {
                 const reposData = await reposResponse.json()
-                setRepositories(reposData.repositories || [])
-                
-                // Check if a specific repository is requested
-                const targetRepo = router.query.repo as string
-                let repoForAnalysis = null
-                
-                if (targetRepo && reposData.repositories) {
-                    // Find the specific repository
-                    repoForAnalysis = reposData.repositories.find(
+                const repositories: Repository[] = reposData.repositories || []
+                setRepositories(repositories)
+
+                // Find the specific repository if requested
+                let repoForAnalysis: Repository | null = null
+                if (targetRepo && repositories.length > 0) {
+                    repoForAnalysis = repositories.find(
                         (repo: Repository) => repo.full_name === targetRepo
-                    )
+                    ) || null
+
                     if (repoForAnalysis) {
                         setSelectedRepository(repoForAnalysis)
                     }
-                }
-                
-                // Calculate metrics based on selected repository or all repositories
-                let reposForMetrics = reposData.repositories || []
-                if (targetRepo && repoForAnalysis) {
-                    reposForMetrics = [repoForAnalysis] // Calculate metrics for single repo
-                }
-                const calculatedMetrics = calculateRealMetrics(reposForMetrics)
-                setMetrics(calculatedMetrics)
-                
-                // Get AI insights for the selected or first repository
-                const analysisRepo = repoForAnalysis || (reposData.repositories && reposData.repositories.length > 0 ? reposData.repositories[0] : null)
-                if (analysisRepo) {
-                    await fetchAIInsights(analysisRepo)
+                } else if (repositories.length > 0 && !targetRepo) {
+                    // Default to first repository if no specific repo requested
+                    repoForAnalysis = repositories[0]
+                    setSelectedRepository(repoForAnalysis)
+                    // Update URL to reflect the default repository selection
+                    router.replace(`/enhanced-dashboard?repo=${encodeURIComponent(repoForAnalysis.full_name)}`)
                 }
             }
         } catch (error) {
             console.error('Error fetching dashboard data:', error)
+            // Fallback to basic display
+            setAiInsights({
+                persona: selectedPersona,
+                devops_score: 0,
+                suggestions: [],
+                analysis_summary: 'Unable to load dashboard data. Please try again later.',
+                generated_at: new Date().toISOString()
+            })
         } finally {
             setLoading(false)
         }
     }
 
-    const calculateRealMetrics = (repos: Repository[]): DevOpsMetrics => {
-        const totalRepos = repos.length
-        let ciCdScore = 0
-        let securityScore = 0
-        let documentationScore = 0
-        let automationScore = 0
+    const calculateBasicMetrics = (repo: Repository): DevOpsMetrics => {
+        // Basic scoring for repositories without AI analysis
+        let ci_cd_score = 0
+        let security_score = 0
+        let documentation_score = 0
+        let automation_score = 0
 
-        repos.forEach(repo => {
-            // Calculate CI/CD score based on repository characteristics
-            if (repo.language === 'TypeScript' || repo.language === 'JavaScript') {
-                ciCdScore += 20 // Assumes modern web projects likely have CI/CD
-            }
-            if (repo.language === 'Python') {
-                ciCdScore += 15
-            }
-            
-            // Security score based on repository visibility and activity
-            if (!repo.private) {
-                securityScore += 10 // Public repos often have better security practices
-            }
-            if (repo.stars > 5) {
-                securityScore += 15 // Popular repos tend to have better security
-            }
-            
-            // Documentation score
-            if (repo.description && repo.description.length > 20) {
-                documentationScore += 25 // Good descriptions indicate better documentation
-            }
-            
-            // Automation score based on language and activity
-            if (repo.language && ['TypeScript', 'Python', 'JavaScript', 'Java'].includes(repo.language)) {
-                automationScore += 20
-            }
-        })
+        // Basic heuristics based on repository characteristics
+        if (repo.language === 'TypeScript' || repo.language === 'JavaScript') {
+            ci_cd_score = 20
+            automation_score = 15
+        }
+        if (repo.language === 'Python') {
+            ci_cd_score = 15
+            automation_score = 20
+        }
 
-        const overall_score = Math.min(
-            Math.round((ciCdScore + securityScore + documentationScore + automationScore) / (totalRepos * 4)),
-            100
-        )
+        if (!repo.private) {
+            security_score = 10
+        }
+        if (repo.stars > 5) {
+            security_score += 10
+        }
+
+        if (repo.description && repo.description.length > 20) {
+            documentation_score = 25
+        }
+
+        const overall = Math.round((ci_cd_score + security_score + documentation_score + automation_score) / 4)
 
         return {
-            overall_score,
-            ci_cd_score: Math.min(Math.round(ciCdScore / totalRepos), 100),
-            security_score: Math.min(Math.round(securityScore / totalRepos), 100),
-            documentation_score: Math.min(Math.round(documentationScore / totalRepos), 100),
-            automation_score: Math.min(Math.round(automationScore / totalRepos), 100),
-            repositories_analyzed: totalRepos,
-            total_repositories: totalRepos
-        }
-    }
-
-    const fetchAIInsights = async (repo: Repository) => {
-        try {
-            const response = await fetch('/api/ai/test-suggestions', {
-                method: 'POST',
-                headers: {
-                    ...TokenManager.getAuthHeader(),
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    repo_url: repo.html_url || `https://github.com/${repo.full_name}`,
-                    persona: selectedPersona
-                })
-            })
-            
-            if (response.ok) {
-                const data = await response.json()
-                setAiInsights(data.analysis)
-            }
-        } catch (error) {
-            console.error('Error fetching AI insights:', error)
-            // Set mock AI insights as fallback
-            setAiInsights({
-                persona: selectedPersona,
-                devops_score: metrics?.overall_score || 65,
-                suggestions: [
-                    {
-                        category: 'CI/CD',
-                        priority: 'High',
-                        title: 'Implement Automated Testing Pipeline',
-                        description: 'Add GitHub Actions workflow for automated testing on every pull request',
-                        implementation_steps: [
-                            'Create .github/workflows/test.yml',
-                            'Add test commands for your tech stack',
-                            'Configure branch protection rules'
-                        ],
-                        resources: ['GitHub Actions Documentation', 'Testing Best Practices'],
-                        estimated_effort: '2-4 hours',
-                        business_impact: 'Reduces bugs in production by 60% and increases deployment confidence'
-                    }
-                ],
-                analysis_summary: 'Your repositories show good potential for DevOps improvements',
-                generated_at: new Date().toISOString()
-            })
+            overall_score: overall,
+            ci_cd_score,
+            security_score,
+            documentation_score,
+            automation_score,
+            repositories_analyzed: 0,
+            total_repositories: 1
         }
     }
 
@@ -267,8 +325,8 @@ function EnhancedDashboard() {
                             { label: 'Enhanced Dashboard', icon: '🚀' },
                             ...(selectedRepository ? [{ label: selectedRepository.name, icon: '📁' }] : [])
                         ]} />
-                        <Link 
-                            href="/repositories" 
+                        <Link
+                            href="/repositories"
                             className="btn-secondary flex items-center space-x-2"
                         >
                             <Github className="w-4 h-4" />
@@ -291,7 +349,7 @@ function EnhancedDashboard() {
                                 )}
                             </p>
                         </div>
-                        
+
                         {/* Controls */}
                         <div className="flex items-center space-x-4">
                             {/* Repository Selector */}
@@ -299,18 +357,15 @@ function EnhancedDashboard() {
                                 <div className="flex items-center space-x-2">
                                     <span className="text-gray-300 text-sm">Repository:</span>
                                     <select
-                                        value={selectedRepository?.full_name || ''}
+                                        value={selectedRepository?.full_name || (repositories[0]?.full_name || '')}
                                         onChange={(e) => {
                                             const repoName = e.target.value
                                             if (repoName) {
                                                 router.push(`/enhanced-dashboard?repo=${encodeURIComponent(repoName)}`)
-                                            } else {
-                                                router.push('/enhanced-dashboard')
                                             }
                                         }}
                                         className="bg-dark-100 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary-500 max-w-48"
                                     >
-                                        <option value="">All Repositories</option>
                                         {repositories.map(repo => (
                                             <option key={repo.id} value={repo.full_name}>
                                                 {repo.name}
@@ -319,19 +374,32 @@ function EnhancedDashboard() {
                                     </select>
                                 </div>
                             )}
-                            
-                            {/* Persona Selector */}
-                            <div className="flex items-center space-x-2">
-                                <span className="text-gray-300 text-sm">View as:</span>
-                                <select
-                                    value={selectedPersona}
-                                    onChange={(e) => setSelectedPersona(e.target.value as 'Student' | 'Professional' | 'Manager')}
-                                    className="bg-dark-100 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary-500"
+
+                            {/* Re-analyze Button */}
+                            {selectedRepository && (
+                                <button
+                                    onClick={() => openAnalysisModal()}
+                                    className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all flex items-center space-x-2 text-sm"
+                                    title="Re-analyze this repository with fresh AI insights"
                                 >
-                                    <option value="Student">🎓 Student</option>
-                                    <option value="Professional">👨‍💻 Professional</option>
-                                    <option value="Manager">👨‍💼 Manager</option>
-                                </select>
+                                    <Brain className="w-4 h-4" />
+                                    <span>🔄 Re-analyze</span>
+                                </button>
+                            )}
+
+                            {/* Role-based Analysis Context */}
+                            <div className="flex items-center space-x-2">
+                                <span className="text-gray-300 text-sm">Analyzed as:</span>
+                                <div className="bg-dark-100 border border-gray-600 rounded-lg px-3 py-2 text-white flex items-center space-x-2">
+                                    <span>
+                                        {selectedPersona === 'Student' && '🎓 Student'}
+                                        {selectedPersona === 'Professional' && '👨‍💻 Professional'}
+                                        {selectedPersona === 'Manager' && '👨‍💼 Manager'}
+                                    </span>
+                                    <span className="text-xs text-gray-400">
+                                        (based on your profile)
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -349,7 +417,7 @@ function EnhancedDashboard() {
                                 </span>
                             </div>
                             <div className="w-full bg-gray-700 rounded-full h-2">
-                                <div 
+                                <div
                                     className={`h-2 rounded-full ${getScoreBgColor(metrics?.overall_score || 0)}`}
                                     style={{ width: `${metrics?.overall_score || 0}%` }}
                                 ></div>
@@ -367,7 +435,7 @@ function EnhancedDashboard() {
                                 </span>
                             </div>
                             <div className="w-full bg-gray-700 rounded-full h-2">
-                                <div 
+                                <div
                                     className={`h-2 rounded-full ${getScoreBgColor(metrics?.ci_cd_score || 0)}`}
                                     style={{ width: `${metrics?.ci_cd_score || 0}%` }}
                                 ></div>
@@ -385,7 +453,7 @@ function EnhancedDashboard() {
                                 </span>
                             </div>
                             <div className="w-full bg-gray-700 rounded-full h-2">
-                                <div 
+                                <div
                                     className={`h-2 rounded-full ${getScoreBgColor(metrics?.security_score || 0)}`}
                                     style={{ width: `${metrics?.security_score || 0}%` }}
                                 ></div>
@@ -403,11 +471,26 @@ function EnhancedDashboard() {
                                 </span>
                             </div>
                             <div className="w-full bg-gray-700 rounded-full h-2">
-                                <div 
+                                <div
                                     className={`h-2 rounded-full ${getScoreBgColor(metrics?.documentation_score || 0)}`}
                                     style={{ width: `${metrics?.documentation_score || 0}%` }}
                                 ></div>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Analysis Chart and Recent Activity */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                        {/* Analysis Score Trends Chart */}
+                        <div className="lg:col-span-2">
+                            <AnalysisChart data={analysisHistory} />
+                        </div>
+
+                        {/* Recent Activity */}
+                        <div className="lg:col-span-1">
+                            <RecentActivity
+                                repositoryFullName={selectedRepository?.full_name || ''}
+                            />
                         </div>
                     </div>
 
@@ -422,14 +505,14 @@ function EnhancedDashboard() {
                                     Powered by Gemini AI
                                 </span>
                             </div>
-                            
+
                             {aiInsights && (
                                 <div className="space-y-4">
                                     <div className="bg-dark-100/50 rounded-lg p-4">
                                         <p className="text-gray-300 text-sm mb-2">Analysis Summary</p>
                                         <p className="text-white">{aiInsights.analysis_summary}</p>
                                     </div>
-                                    
+
                                     {aiInsights.suggestions.slice(0, 3).map((suggestion, index) => (
                                         <div key={index} className="bg-dark-100/30 rounded-lg p-4 border-l-4 border-primary-500">
                                             <div className="flex items-start justify-between mb-2">
@@ -451,7 +534,7 @@ function EnhancedDashboard() {
                                             </div>
                                         </div>
                                     ))}
-                                    
+
                                     <button className="w-full btn-secondary py-2">
                                         View All AI Suggestions ({aiInsights.suggestions.length})
                                     </button>
@@ -467,14 +550,14 @@ function EnhancedDashboard() {
                                     {selectedRepository ? 'Repository Details' : 'Repository Health'}
                                 </h2>
                             </div>
-                            
+
                             {selectedRepository ? (
                                 /* Single Repository View */
                                 <div className="space-y-4">
                                     <div className="bg-gradient-to-r from-primary-600/20 to-cyber-600/20 rounded-lg p-4">
                                         <h3 className="text-lg font-semibold text-white mb-2">{selectedRepository.name}</h3>
                                         <p className="text-gray-300 text-sm mb-3">{selectedRepository.description || 'No description available'}</p>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-3 gap-4">
                                             <div className="text-center">
                                                 <div className="text-xl font-bold text-primary-400 mb-1">{selectedRepository.stars}</div>
                                                 <div className="text-xs text-gray-400">Stars</div>
@@ -483,9 +566,23 @@ function EnhancedDashboard() {
                                                 <div className="text-xl font-bold text-green-400 mb-1">{selectedRepository.forks}</div>
                                                 <div className="text-xs text-gray-400">Forks</div>
                                             </div>
+                                            <div className="text-center">
+                                                <div className={`text-xl font-bold mb-1 ${getScoreColor(aiInsights?.devops_score || 0)}`}>
+                                                    {aiInsights?.devops_score || 0}/100
+                                                </div>
+                                                <div className="text-xs text-gray-400">AI DevOps Score</div>
+                                            </div>
                                         </div>
+                                        {aiInsights && aiInsights.devops_score > 0 && (
+                                            <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
+                                                <div
+                                                    className={`h-2 rounded-full ${getScoreBgColor(aiInsights.devops_score)}`}
+                                                    style={{ width: `${aiInsights.devops_score}%` }}
+                                                ></div>
+                                            </div>
+                                        )}
                                     </div>
-                                    
+
                                     <div className="grid grid-cols-1 gap-3">
                                         <div className="flex items-center justify-between bg-dark-100/50 rounded-lg p-3">
                                             <span className="text-gray-300 text-sm">Language</span>
@@ -520,7 +617,7 @@ function EnhancedDashboard() {
                                             <div className="text-xs text-gray-400">Active Projects</div>
                                         </div>
                                     </div>
-                                    
+
                                     {/* Top Languages */}
                                     <div>
                                         <h4 className="text-white font-semibold mb-3">Top Languages</h4>
@@ -540,7 +637,7 @@ function EnhancedDashboard() {
                                             ))}
                                         </div>
                                     </div>
-                                    
+
                                     {/* Quick Actions */}
                                     <div className="pt-4 border-t border-gray-600">
                                         <Link href="/repositories" className="w-full btn-secondary py-2 text-center block">
@@ -552,13 +649,29 @@ function EnhancedDashboard() {
                         </div>
                     </div>
 
+                    {/* Learning Paths Section */}
+                    {aiInsights && (
+                        <div className="mb-8">
+                            <div className="card p-6">
+                                <div className="flex items-center space-x-2 mb-6">
+                                    <BookOpen className="w-6 h-6 text-blue-400" />
+                                    <h2 className="text-xl font-bold text-white">Personalized Learning Paths</h2>
+                                    <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">
+                                        Based on AI Analysis
+                                    </span>
+                                </div>
+                                <LearningPaths userId={user?.id || 'demo-user'} />
+                            </div>
+                        </div>
+                    )}
+
                     {/* Recent Activity */}
                     <div className="card p-6">
                         <div className="flex items-center space-x-2 mb-6">
                             <TrendingUp className="w-6 h-6 text-green-400" />
                             <h2 className="text-xl font-bold text-white">Recent Activity</h2>
                         </div>
-                        
+
                         <div className="space-y-4">
                             {repositories.slice(0, 5).map((repo) => (
                                 <div key={repo.id} className="flex items-center justify-between py-3 border-b border-gray-600 last:border-b-0">
@@ -591,6 +704,14 @@ function EnhancedDashboard() {
                     </div>
                 </div>
             </div>
+
+            {/* Analysis Modal */}
+            <AnalysisModal
+                isOpen={isAnalysisModalOpen}
+                onClose={closeAnalysisModal}
+                repository={selectedRepository}
+                onAnalysisComplete={handleAnalysisComplete}
+            />
         </>
     )
 }

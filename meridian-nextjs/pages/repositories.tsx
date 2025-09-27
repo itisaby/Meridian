@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { withAuth } from '../contexts/AuthContext'
 import { TokenManager } from '../lib/tokenManager'
 import { Breadcrumb } from '../components/ui/Breadcrumb'
-import { Github, Plus, Clock, Star, GitFork, AlertCircle, CheckCircle, X } from 'lucide-react'
+import { AnalysisModal } from '../components/ui/AnalysisModal'
+import { Github, Clock, Star, GitFork, Brain, TrendingUp, AlertCircle, X } from 'lucide-react'
 
 interface Repository {
     id: string
@@ -20,49 +21,41 @@ interface Repository {
     private: boolean
 }
 
-interface AnalyzedRepository {
-    id: string
-    user_id: string
-    repo_url: string
-    repo_name: string
-    analysis_data: any // TODO: Create proper analysis data type
+interface AIAnalysis {
+    id: number
+    repository_full_name: string
+    devops_score: number
+    tech_stack: string
     created_at: string
+    analysis_summary: string
 }
 
 function RepositoriesPage() {
     const [githubRepos, setGithubRepos] = useState<Repository[]>([])
-    const [analyzedRepos, setAnalyzedRepos] = useState<AnalyzedRepository[]>([])
+    const [aiAnalyses, setAiAnalyses] = useState<AIAnalysis[]>([])
     const [loading, setLoading] = useState(true)
     const [syncLoading, setSyncLoading] = useState(false)
-    const [analyzingRepos, setAnalyzingRepos] = useState<Set<string>>(new Set())
     const [error, setError] = useState('')
+    const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false)
+    const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null)
 
     useEffect(() => {
         fetchRepositories()
+        fetchAIAnalyses()
     }, [])
 
     const fetchRepositories = async () => {
         try {
             setLoading(true)
-            
-            // Fetch GitHub repositories and analyzed repositories in parallel
-            const [githubResponse, analyzedResponse] = await Promise.all([
-                fetch('/api/repositories/github/repos', {
-                    headers: TokenManager.getAuthHeader()
-                }),
-                fetch('/api/repositories', {
-                    headers: TokenManager.getAuthHeader()
-                })
-            ])
+
+            // Fetch GitHub repositories
+            const githubResponse = await fetch('/api/repositories/github/repos', {
+                headers: TokenManager.getAuthHeader()
+            })
 
             if (githubResponse.ok) {
                 const githubData = await githubResponse.json()
                 setGithubRepos(githubData.repositories || [])
-            }
-
-            if (analyzedResponse.ok) {
-                const analyzedData = await analyzedResponse.json()
-                setAnalyzedRepos(analyzedData || [])
             }
 
         } catch (error) {
@@ -70,6 +63,21 @@ function RepositoriesPage() {
             setError('Failed to fetch repositories')
         } finally {
             setLoading(false)
+        }
+    }
+
+    const fetchAIAnalyses = async () => {
+        try {
+            const response = await fetch('/api/ai/user-analyses', {
+                headers: TokenManager.getAuthHeader()
+            })
+
+            if (response.ok) {
+                const data = await response.json()
+                setAiAnalyses(data.analyses || [])
+            }
+        } catch (error) {
+            console.error('Error fetching AI analyses:', error)
         }
     }
 
@@ -87,6 +95,7 @@ function RepositoriesPage() {
                 const data = await response.json()
                 // Refresh the repository list
                 await fetchRepositories()
+                await fetchAIAnalyses()
                 // Show success message
                 alert(`Successfully synced ${data.total_synced} repositories!`)
             } else {
@@ -102,19 +111,38 @@ function RepositoriesPage() {
         }
     }
 
-    const getDevOpsScore = (analysisData: Record<string, any>): number => {
-        return analysisData?.devops_score || 0
+    const openAnalysisModal = (repo: Repository) => {
+        setSelectedRepo(repo)
+        setIsAnalysisModalOpen(true)
+    }
+
+    const closeAnalysisModal = () => {
+        setSelectedRepo(null)
+        setIsAnalysisModalOpen(false)
+    }
+
+    const handleAnalysisComplete = () => {
+        // Refresh AI analyses after completion
+        fetchAIAnalyses()
+    }
+
+    const getAIScore = (repoFullName: string): number | null => {
+        const analysis = aiAnalyses.find(a => a.repository_full_name === repoFullName)
+        return analysis ? analysis.devops_score : null
     }
 
     const getScoreColor = (score: number): string => {
-        if (score >= 80) return 'text-green-400'
-        if (score >= 60) return 'text-yellow-400'
-        if (score >= 40) return 'text-orange-400'
-        return 'text-red-400'
+        if (score >= 80) return 'text-green-600 bg-green-50 border-green-200'
+        if (score >= 60) return 'text-yellow-600 bg-yellow-50 border-yellow-200'
+        if (score >= 40) return 'text-orange-600 bg-orange-50 border-orange-200'
+        return 'text-red-600 bg-red-50 border-red-200'
     }
 
-    const isRepositoryAnalyzed = (repoUrl: string): AnalyzedRepository | undefined => {
-        return analyzedRepos.find(repo => repo.repo_url === repoUrl)
+    const getScoreLabel = (score: number): string => {
+        if (score >= 80) return 'Excellent'
+        if (score >= 60) return 'Good'
+        if (score >= 40) return 'Fair'
+        return 'Needs Work'
     }
 
     if (loading) {
@@ -140,8 +168,8 @@ function RepositoriesPage() {
                     {/* Navigation */}
                     <div className="flex items-center justify-between mb-6">
                         <Breadcrumb items={[{ label: 'Repositories', icon: '📊' }]} />
-                        <Link 
-                            href="/enhanced-dashboard" 
+                        <Link
+                            href="/enhanced-dashboard"
                             className="btn-secondary flex items-center space-x-2"
                         >
                             <span>🚀</span>
@@ -159,7 +187,7 @@ function RepositoriesPage() {
                                 Connect and analyze your GitHub repositories for DevOps insights
                             </p>
                         </div>
-                        
+
                         <button
                             onClick={handleSyncRepositories}
                             disabled={syncLoading}
@@ -179,7 +207,7 @@ function RepositoriesPage() {
                             <div className="flex items-center space-x-2">
                                 <AlertCircle className="w-5 h-5 text-red-400" />
                                 <p className="text-red-300">{error}</p>
-                                <button 
+                                <button
                                     onClick={() => setError('')}
                                     className="ml-auto text-red-400 hover:text-red-300"
                                 >
@@ -192,9 +220,8 @@ function RepositoriesPage() {
                     {/* Repository Grid */}
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {githubRepos.map((repo) => {
-                            const analyzedRepo = isRepositoryAnalyzed(repo.clone_url)
-                            const isAnalyzing = analyzingRepos.has(analyzedRepo?.id || '')
-                            const devopsScore = analyzedRepo ? getDevOpsScore(analyzedRepo.analysis_data) : null
+                            const aiScore = getAIScore(repo.full_name)
+                            const hasAIAnalysis = aiScore !== null
 
                             return (
                                 <div key={repo.id} className="card p-6 hover:scale-105 transition-all duration-300">
@@ -233,24 +260,38 @@ function RepositoriesPage() {
                                         </span>
                                     </div>
 
-                                    {/* DevOps Score */}
-                                    {devopsScore !== null && (
-                                        <div className="mb-4 p-3 bg-dark-100/50 rounded-lg">
+                                    {/* AI DevOps Score */}
+                                    {hasAIAnalysis ? (
+                                        <div className="mb-4 p-3 bg-dark-100/50 rounded-lg border border-primary-500/20">
                                             <div className="flex items-center justify-between">
-                                                <span className="text-sm text-gray-300">DevOps Score</span>
-                                                <span className={`text-lg font-bold ${getScoreColor(devopsScore)}`}>
-                                                    {devopsScore}/100
+                                                <span className="text-sm text-gray-300 flex items-center space-x-1">
+                                                    <Brain className="w-3 h-3 text-primary-400" />
+                                                    <span>AI DevOps Score</span>
                                                 </span>
+                                                <div className="flex items-center space-x-2">
+                                                    <span className={`text-lg font-bold ${getScoreColor(aiScore!).replace('bg-', 'text-').replace('border-', '').split(' ')[0]}`}>
+                                                        {aiScore}/100
+                                                    </span>
+                                                    <span className={`text-xs px-2 py-1 rounded border ${getScoreColor(aiScore!)}`}>
+                                                        {getScoreLabel(aiScore!)}
+                                                    </span>
+                                                </div>
                                             </div>
                                             <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
-                                                <div 
-                                                    className={`h-2 rounded-full ${
-                                                        devopsScore >= 80 ? 'bg-green-500' :
-                                                        devopsScore >= 60 ? 'bg-yellow-500' :
-                                                        devopsScore >= 40 ? 'bg-orange-500' : 'bg-red-500'
-                                                    }`}
-                                                    style={{ width: `${devopsScore}%` }}
+                                                <div
+                                                    className={`h-2 rounded-full ${aiScore! >= 80 ? 'bg-green-500' :
+                                                        aiScore! >= 60 ? 'bg-yellow-500' :
+                                                            aiScore! >= 40 ? 'bg-orange-500' : 'bg-red-500'
+                                                        }`}
+                                                    style={{ width: `${aiScore}%` }}
                                                 ></div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="mb-4 p-3 bg-gray-700/20 rounded-lg border border-dashed border-gray-600">
+                                            <div className="flex items-center justify-center text-gray-400 text-sm">
+                                                <Brain className="w-4 h-4 mr-2" />
+                                                <span>No AI analysis yet</span>
                                             </div>
                                         </div>
                                     )}
@@ -265,41 +306,33 @@ function RepositoriesPage() {
                                         >
                                             View on GitHub →
                                         </a>
-                                        
+
                                         <div className="flex items-center space-x-2">
-                                            {analyzedRepo ? (
+                                            {hasAIAnalysis ? (
                                                 <>
-                                                    {isAnalyzing ? (
-                                                        <div className="flex items-center space-x-1 text-yellow-400">
-                                                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-400"></div>
-                                                            <span className="text-xs">Analyzing...</span>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex items-center space-x-1 text-green-400">
-                                                            <CheckCircle className="w-3 h-3" />
-                                                            <span className="text-xs">Analyzed</span>
-                                                        </div>
-                                                    )}
-                                                    <Link 
+                                                    <Link
                                                         href={`/enhanced-dashboard?repo=${encodeURIComponent(repo.full_name)}`}
-                                                        className="text-xs bg-gradient-to-r from-primary-500 to-cyber-500 text-white px-3 py-1 rounded-lg hover:shadow-lg transition-all"
+                                                        className="text-xs bg-gradient-to-r from-primary-500 to-cyber-500 text-white px-3 py-1 rounded-lg hover:shadow-lg transition-all flex items-center space-x-1"
                                                     >
-                                                        🚀 AI Analysis
+                                                        <TrendingUp className="w-3 h-3" />
+                                                        <span>View Analysis</span>
                                                     </Link>
+                                                    <button
+                                                        onClick={() => openAnalysisModal(repo)}
+                                                        className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1 rounded-lg hover:shadow-lg transition-all flex items-center space-x-1"
+                                                        title="Re-analyze this repository"
+                                                    >
+                                                        <Brain className="w-3 h-3" />
+                                                        <span>🔄 Re-analyze</span>
+                                                    </button>
                                                 </>
                                             ) : (
                                                 <button
-                                                    onClick={() => {
-                                                        // First sync the repo, then analyze
-                                                        handleSyncRepositories().then(() => {
-                                                            // After sync, find the repo and analyze
-                                                            setTimeout(() => fetchRepositories(), 1000)
-                                                        })
-                                                    }}
-                                                    className="text-xs btn-primary py-1 px-3"
+                                                    onClick={() => openAnalysisModal(repo)}
+                                                    className="text-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-1 rounded-lg hover:shadow-lg transition-all flex items-center space-x-1"
                                                 >
-                                                    <Plus className="w-3 h-3 inline mr-1" />
-                                                    Analyze First
+                                                    <Brain className="w-3 h-3" />
+                                                    <span>🚀 AI Analysis</span>
                                                 </button>
                                             )}
                                         </div>
@@ -316,6 +349,14 @@ function RepositoriesPage() {
                             )
                         })}
                     </div>
+
+                    {/* Analysis Modal */}
+                    <AnalysisModal
+                        isOpen={isAnalysisModalOpen}
+                        onClose={closeAnalysisModal}
+                        repository={selectedRepo}
+                        onAnalysisComplete={handleAnalysisComplete}
+                    />
 
                     {githubRepos.length === 0 && (
                         <div className="text-center py-12">

@@ -1,13 +1,47 @@
 import Head from 'next/head'
 import Link from 'next/link'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { useAuth } from '../contexts/AuthContext'
 import { withAuth } from '../contexts/AuthContext'
+import { TokenManager } from '../lib/tokenManager'
+import { Github, TrendingUp, Star, GitFork, Code, Brain, Target } from 'lucide-react'
+
+interface Repository {
+    id: string
+    name: string
+    full_name: string
+    description: string
+    language: string
+    stars: number
+    forks: number
+    updated_at: string
+    private: boolean
+}
+
+interface AIAnalysis {
+    repository_full_name: string
+    devops_score: number
+    created_at: string
+}
+
+interface GitHubStats {
+    totalRepos: number
+    publicRepos: number
+    privateRepos: number
+    totalStars: number
+    totalForks: number
+    languages: Record<string, number>
+    analysedRepos: number
+    avgDevOpsScore: number
+    topAnalysedRepos: Array<{ name: string, score: number }>
+}
 
 function Dashboard() {
     const { user, logout } = useAuth()
     const router = useRouter()
+    const [githubStats, setGithubStats] = useState<GitHubStats | null>(null)
+    const [loadingStats, setLoadingStats] = useState(true)
 
     // Check if user needs to complete profile setup
     useEffect(() => {
@@ -16,6 +50,86 @@ function Dashboard() {
             router.push('/profile-setup')
         }
     }, [user, router])
+
+    // Fetch GitHub overview stats
+    useEffect(() => {
+        const fetchGithubStats = async () => {
+            try {
+                setLoadingStats(true)
+
+                // Fetch repositories and AI analyses in parallel
+                const [reposResponse, analysesResponse] = await Promise.all([
+                    fetch('/api/repositories/github/repos', {
+                        headers: TokenManager.getAuthHeader()
+                    }),
+                    fetch('/api/ai/user-analyses', {
+                        headers: TokenManager.getAuthHeader()
+                    })
+                ])
+
+                let repositories: Repository[] = []
+                let analyses: AIAnalysis[] = []
+
+                if (reposResponse.ok) {
+                    const reposData = await reposResponse.json()
+                    repositories = reposData.repositories || []
+                }
+
+                if (analysesResponse.ok) {
+                    const analysesData = await analysesResponse.json()
+                    analyses = analysesData.analyses || []
+                }
+
+                // Calculate comprehensive stats
+                const totalRepos = repositories.length
+                const publicRepos = repositories.filter(r => !r.private).length
+                const privateRepos = repositories.filter(r => r.private).length
+                const totalStars = repositories.reduce((sum, repo) => sum + repo.stars, 0)
+                const totalForks = repositories.reduce((sum, repo) => sum + repo.forks, 0)
+
+                // Calculate language distribution
+                const languages: Record<string, number> = {}
+                repositories.forEach(repo => {
+                    if (repo.language) {
+                        languages[repo.language] = (languages[repo.language] || 0) + 1
+                    }
+                })
+
+                // Calculate AI analysis stats
+                const analysedRepos = analyses.length
+                const avgDevOpsScore = analyses.length > 0
+                    ? analyses.reduce((sum, analysis) => sum + analysis.devops_score, 0) / analyses.length
+                    : 0
+
+                const topAnalysedRepos = analyses
+                    .sort((a, b) => b.devops_score - a.devops_score)
+                    .slice(0, 3)
+                    .map(analysis => ({
+                        name: analysis.repository_full_name.split('/')[1] || analysis.repository_full_name,
+                        score: analysis.devops_score
+                    }))
+
+                setGithubStats({
+                    totalRepos,
+                    publicRepos,
+                    privateRepos,
+                    totalStars,
+                    totalForks,
+                    languages,
+                    analysedRepos,
+                    avgDevOpsScore: Math.round(avgDevOpsScore),
+                    topAnalysedRepos
+                })
+
+            } catch (error) {
+                console.error('Error fetching GitHub stats:', error)
+            } finally {
+                setLoadingStats(false)
+            }
+        }
+
+        fetchGithubStats()
+    }, [])
 
     const handleLogout = async () => {
         await logout()
@@ -99,7 +213,7 @@ function Dashboard() {
                                 <div className="text-4xl">🤖</div>
                                 <div>
                                     <h2 className="text-2xl font-bold text-white mb-2">
-                                        AI-Powered DevOps Analysis 
+                                        AI-Powered DevOps Analysis
                                         <span className="ml-2 text-xs bg-cyber-500 text-white px-2 py-1 rounded-full">NEW</span>
                                     </h2>
                                     <p className="text-gray-300">
@@ -108,15 +222,15 @@ function Dashboard() {
                                 </div>
                             </div>
                             <div className="flex space-x-3">
-                                <Link 
-                                    href="/repositories" 
+                                <Link
+                                    href="/repositories"
                                     className="btn-secondary flex items-center space-x-2"
                                 >
                                     <span>📊</span>
                                     <span>View Repositories</span>
                                 </Link>
-                                <Link 
-                                    href="/enhanced-dashboard" 
+                                <Link
+                                    href="/enhanced-dashboard"
                                     className="btn-primary flex items-center space-x-2"
                                 >
                                     <span>🚀</span>
@@ -126,30 +240,199 @@ function Dashboard() {
                         </div>
                     </div>
 
-                    {/* Quick Actions */}
-                    <div className="grid md:grid-cols-4 gap-6 mb-8">
-                        <Link href="/repositories" className="card p-6 hover:scale-105 transition-transform cursor-pointer">
-                            <div className="text-3xl mb-4">📊</div>
-                            <h3 className="text-xl font-bold text-white mb-2">My Repositories</h3>
-                            <p className="text-gray-400">View and manage your GitHub repositories</p>
-                        </Link>
-
-                        <Link href="/enhanced-dashboard" className="card p-6 hover:scale-105 transition-transform cursor-pointer bg-gradient-to-br from-primary-600 to-cyber-600">
-                            <div className="text-3xl mb-4">🚀</div>
-                            <h3 className="text-xl font-bold text-white mb-2">Enhanced Dashboard</h3>
-                            <p className="text-gray-300">AI-powered DevOps insights and metrics</p>
-                        </Link>
-
-                        <div className="card p-6 hover:scale-105 transition-transform cursor-pointer">
-                            <div className="text-3xl mb-4">🎯</div>
-                            <h3 className="text-xl font-bold text-white mb-2">Learning Paths</h3>
-                            <p className="text-gray-400">Personalized learning based on your current skills</p>
+                    {/* GitHub Overview Stats */}
+                    <div className="card p-6 mb-8">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center space-x-3">
+                                <Github className="w-8 h-8 text-gray-300" />
+                                <h2 className="text-2xl font-bold text-white">GitHub Portfolio Overview</h2>
+                            </div>
+                            {loadingStats && (
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
+                            )}
                         </div>
 
-                        <div className="card p-6 hover:scale-105 transition-transform cursor-pointer">
-                            <div className="text-3xl mb-4">🤝</div>
+                        {githubStats && !loadingStats ? (
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* Repository Stats */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
+                                        <Code className="w-5 h-5" />
+                                        <span>Repository Statistics</span>
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-dark-100/50 rounded-lg p-4 text-center">
+                                            <div className="text-2xl font-bold text-primary-400 mb-1">{githubStats.totalRepos}</div>
+                                            <div className="text-xs text-gray-400">Total Repos</div>
+                                        </div>
+                                        <div className="bg-dark-100/50 rounded-lg p-4 text-center">
+                                            <div className="text-2xl font-bold text-green-400 mb-1">{githubStats.publicRepos}</div>
+                                            <div className="text-xs text-gray-400">Public</div>
+                                        </div>
+                                        <div className="bg-dark-100/50 rounded-lg p-4 text-center">
+                                            <div className="text-2xl font-bold text-yellow-400 mb-1 flex items-center justify-center space-x-1">
+                                                <Star className="w-4 h-4" />
+                                                <span>{githubStats.totalStars}</span>
+                                            </div>
+                                            <div className="text-xs text-gray-400">Total Stars</div>
+                                        </div>
+                                        <div className="bg-dark-100/50 rounded-lg p-4 text-center">
+                                            <div className="text-2xl font-bold text-blue-400 mb-1 flex items-center justify-center space-x-1">
+                                                <GitFork className="w-4 h-4" />
+                                                <span>{githubStats.totalForks}</span>
+                                            </div>
+                                            <div className="text-xs text-gray-400">Total Forks</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* AI Analysis Stats */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
+                                        <Brain className="w-5 h-5" />
+                                        <span>AI DevOps Analysis</span>
+                                    </h3>
+                                    <div className="bg-gradient-to-br from-primary-600/20 to-cyber-600/20 rounded-lg p-4 border border-primary-500/30">
+                                        <div className="text-center mb-4">
+                                            <div className="text-3xl font-bold text-primary-400 mb-1">{githubStats.avgDevOpsScore}/100</div>
+                                            <div className="text-sm text-gray-300">Average DevOps Score</div>
+                                        </div>
+                                        <div className="w-full bg-gray-700 rounded-full h-2 mb-3">
+                                            <div
+                                                className={`h-2 rounded-full ${githubStats.avgDevOpsScore >= 80 ? 'bg-green-500' :
+                                                    githubStats.avgDevOpsScore >= 60 ? 'bg-yellow-500' :
+                                                        githubStats.avgDevOpsScore >= 40 ? 'bg-orange-500' : 'bg-red-500'}`}
+                                                style={{ width: `${githubStats.avgDevOpsScore}%` }}
+                                            ></div>
+                                        </div>
+                                        <div className="flex justify-between text-xs text-gray-400">
+                                            <span>{githubStats.analysedRepos} analyzed</span>
+                                            <span>{githubStats.totalRepos - githubStats.analysedRepos} pending</span>
+                                        </div>
+                                    </div>
+                                    {githubStats.topAnalysedRepos.length > 0 && (
+                                        <div>
+                                            <h4 className="text-sm font-semibold text-gray-300 mb-2">Top Scoring Repositories</h4>
+                                            <div className="space-y-1">
+                                                {githubStats.topAnalysedRepos.map((repo, index) => (
+                                                    <div key={index} className="flex items-center justify-between text-sm">
+                                                        <span className="text-gray-300 truncate">{repo.name}</span>
+                                                        <div className="flex items-center space-x-2">
+                                                            <div className="w-12 bg-gray-700 rounded-full h-1">
+                                                                <div
+                                                                    className={`h-1 rounded-full ${repo.score >= 80 ? 'bg-green-500' :
+                                                                        repo.score >= 60 ? 'bg-yellow-500' :
+                                                                            repo.score >= 40 ? 'bg-orange-500' : 'bg-red-500'}`}
+                                                                    style={{ width: `${repo.score}%` }}
+                                                                ></div>
+                                                            </div>
+                                                            <span className="text-xs text-primary-400 w-8">{repo.score}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Languages */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
+                                        <Target className="w-5 h-5" />
+                                        <span>Technology Stack</span>
+                                    </h3>
+                                    <div className="space-y-2">
+                                        {Object.entries(githubStats.languages)
+                                            .sort(([, a], [, b]) => b - a)
+                                            .slice(0, 6)
+                                            .map(([language, count]) => {
+                                                const percentage = Math.round((count / githubStats.totalRepos) * 100)
+                                                return (
+                                                    <div key={language} className="flex items-center justify-between">
+                                                        <span className="text-gray-300 text-sm">{language}</span>
+                                                        <div className="flex items-center space-x-2">
+                                                            <div className="w-16 bg-gray-700 rounded-full h-2">
+                                                                <div
+                                                                    className="bg-primary-500 h-2 rounded-full"
+                                                                    style={{ width: `${percentage}%` }}
+                                                                ></div>
+                                                            </div>
+                                                            <span className="text-xs text-primary-400 w-8">{count}</span>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t border-gray-600">
+                                        <Link
+                                            href="/repositories"
+                                            className="w-full btn-secondary py-2 text-center block text-sm"
+                                        >
+                                            Analyze More Repositories →
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : !loadingStats ? (
+                            <div className="text-center py-8">
+                                <Github className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                                <h3 className="text-lg font-semibold text-white mb-2">Connect Your GitHub</h3>
+                                <p className="text-gray-400 mb-4">Connect your GitHub account to see your repository analytics</p>
+                                <Link href="/repositories" className="btn-primary">
+                                    Connect GitHub
+                                </Link>
+                            </div>
+                        ) : null}
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div className="grid md:grid-cols-4 gap-6 mb-8">
+                        <Link href="/repositories" className="card p-6 hover:scale-105 transition-transform cursor-pointer group">
+                            <div className="text-3xl mb-4 group-hover:scale-110 transition-transform">📊</div>
+                            <h3 className="text-xl font-bold text-white mb-2">My Repositories</h3>
+                            <p className="text-gray-400">View and analyze your GitHub repositories</p>
+                            <div className="mt-3 pt-3 border-t border-gray-600">
+                                <div className="flex items-center justify-between text-xs text-gray-500">
+                                    <span>{githubStats?.totalRepos || 0} repositories</span>
+                                    <TrendingUp className="w-3 h-3" />
+                                </div>
+                            </div>
+                        </Link>
+
+                        <Link href="/enhanced-dashboard" className="card p-6 hover:scale-105 transition-transform cursor-pointer bg-gradient-to-br from-primary-600 to-cyber-600 group">
+                            <div className="text-3xl mb-4 group-hover:scale-110 transition-transform">🚀</div>
+                            <h3 className="text-xl font-bold text-white mb-2">Enhanced Dashboard</h3>
+                            <p className="text-gray-300">Repository-specific AI-powered DevOps insights</p>
+                            <div className="mt-3 pt-3 border-t border-primary-400/30">
+                                <div className="flex items-center justify-between text-xs text-primary-200">
+                                    <span>Avg Score: {githubStats?.avgDevOpsScore || 0}/100</span>
+                                    <Brain className="w-3 h-3" />
+                                </div>
+                            </div>
+                        </Link>
+
+                        <div className="card p-6 hover:scale-105 transition-transform cursor-pointer group opacity-75">
+                            <div className="text-3xl mb-4 group-hover:scale-110 transition-transform">🎯</div>
+                            <h3 className="text-xl font-bold text-white mb-2">Learning Paths</h3>
+                            <p className="text-gray-400">Personalized learning based on analysis results</p>
+                            <div className="mt-3 pt-3 border-t border-gray-600">
+                                <div className="flex items-center justify-between text-xs text-gray-500">
+                                    <span>Coming Soon</span>
+                                    <Target className="w-3 h-3" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="card p-6 hover:scale-105 transition-transform cursor-pointer group opacity-75">
+                            <div className="text-3xl mb-4 group-hover:scale-110 transition-transform">🤝</div>
                             <h3 className="text-xl font-bold text-white mb-2">Team Collaboration</h3>
-                            <p className="text-gray-400">Connect with peers and share knowledge</p>
+                            <p className="text-gray-400">Share insights and collaborate with team members</p>
+                            <div className="mt-3 pt-3 border-t border-gray-600">
+                                <div className="flex items-center justify-between text-xs text-gray-500">
+                                    <span>Coming Soon</span>
+                                    <Github className="w-3 h-3" />
+                                </div>
+                            </div>
                         </div>
                     </div>
 

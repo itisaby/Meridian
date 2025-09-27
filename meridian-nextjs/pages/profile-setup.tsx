@@ -143,8 +143,8 @@ export default function ProfileSetup() {
                                     onClick={() => handleRoleSelect(role.id)}
                                     className={`
                                         relative cursor-pointer rounded-xl p-6 transition-all duration-300
-                                        ${isSelected 
-                                            ? 'bg-gradient-to-br ' + role.color + ' transform scale-105 shadow-2xl' 
+                                        ${isSelected
+                                            ? 'bg-gradient-to-br ' + role.color + ' transform scale-105 shadow-2xl'
                                             : 'bg-dark-200 hover:bg-dark-100 hover:scale-102'
                                         }
                                         border-2 ${isSelected ? 'border-white/20' : 'border-gray-600/20'}
@@ -167,7 +167,7 @@ export default function ProfileSetup() {
                                         `}>
                                             <IconComponent className={`w-8 h-8 ${isSelected ? 'text-white' : 'text-primary-400'}`} />
                                         </div>
-                                        
+
                                         <h3 className={`text-xl font-bold mb-2 ${isSelected ? 'text-white' : 'text-white'}`}>
                                             {role.title}
                                         </h3>

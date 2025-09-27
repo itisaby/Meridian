@@ -50,7 +50,7 @@ export const TokenManager = {
     getAuthHeader(): HeadersInit {
         const token = this.getMeridianToken()
         if (!token) return {}
-        
+
         return {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
