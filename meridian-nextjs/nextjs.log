@@ -219,3 +219,74 @@ withAuth: showing loading state
  GET /api/repositories 200 in 1205ms
  GET /api/repositories 200 in 1207ms
  GET /api/auth/session 200 in 22ms
+ GET /api/auth/session 200 in 11ms
+ GET /api/auth/session 200 in 66ms
+ GET /api/repositories 200 in 1518ms
+ GET /api/repositories 200 in 1517ms
+Failed to proxy http://localhost:8000/repositories/github/repos [Error: socket hang up] { code: 'ECONNRESET' }
+[Error: socket hang up] { code: 'ECONNRESET' }
+Failed to proxy http://localhost:8000/repositories/github/repos [Error: socket hang up] { code: 'ECONNRESET' }
+[Error: socket hang up] { code: 'ECONNRESET' }
+ ✓ Compiled /_error in 297ms (593 modules)
+Failed to proxy http://localhost:8000/repositories/github/repos [Error: socket hang up] { code: 'ECONNRESET' }
+[Error: socket hang up] { code: 'ECONNRESET' }
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled /login in 348ms (456 modules)
+ POST /api/auth/_log 200 in 417ms
+🔍 NextAuth Debug: {
+  status: 'loading',
+  hasSession: false,
+  sessionUser: undefined,
+  timestamp: '2025-09-27T18:54:16.534Z'
+}
+ GET /login 200 in 554ms
+ GET /api/auth/session 200 in 3ms
+ GET /api/auth/session 200 in 45ms
+API route error: TypeError: fetch failed
+    at async handler (pages/api/repositories/index.ts:8:26)
+   6 | export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+   7 |     try {
+>  8 |         const response = await fetch(`${BACKEND_URL}/repositories/`, {
+     |                          ^
+   9 |             method: req.method,
+  10 |             headers: {
+  11 |                 'Content-Type': 'application/json', {
+  [cause]: [Error: read ECONNRESET] {
+    errno: -54,
+    code: 'ECONNRESET',
+    syscall: 'read'
+  }
+}
+ GET /api/repositories 500 in 299047ms
+API route error: TypeError: fetch failed
+    at async handler (pages/api/repositories/index.ts:8:26)
+   6 | export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+   7 |     try {
+>  8 |         const response = await fetch(`${BACKEND_URL}/repositories/`, {
+     |                          ^
+   9 |             method: req.method,
+  10 |             headers: {
+  11 |                 'Content-Type': 'application/json', {
+  [cause]: [Error: read ECONNRESET] {
+    errno: -54,
+    code: 'ECONNRESET',
+    syscall: 'read'
+  }
+}
+ GET /api/repositories 500 in 297020ms
+API route error: TypeError: fetch failed
+    at async handler (pages/api/repositories/index.ts:8:26)
+   6 | export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+   7 |     try {
+>  8 |         const response = await fetch(`${BACKEND_URL}/repositories/`, {
+     |                          ^
+   9 |             method: req.method,
+  10 |             headers: {
+  11 |                 'Content-Type': 'application/json', {
+  [cause]: [Error: read ECONNRESET] {
+    errno: -54,
+    code: 'ECONNRESET',
+    syscall: 'read'
+  }
+}
+ GET /api/repositories 500 in 299093ms

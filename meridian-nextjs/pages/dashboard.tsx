@@ -92,12 +92,52 @@ function Dashboard() {
                         </p>
                     </div>
 
+                    {/* AI Feature Spotlight */}
+                    <div className="card p-8 mb-8 bg-gradient-to-r from-primary-600/20 via-cyber-600/20 to-primary-600/20 border border-primary-500/30">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                                <div className="text-4xl">🤖</div>
+                                <div>
+                                    <h2 className="text-2xl font-bold text-white mb-2">
+                                        AI-Powered DevOps Analysis 
+                                        <span className="ml-2 text-xs bg-cyber-500 text-white px-2 py-1 rounded-full">NEW</span>
+                                    </h2>
+                                    <p className="text-gray-300">
+                                        Get personalized DevOps recommendations powered by Google Gemini AI
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex space-x-3">
+                                <Link 
+                                    href="/repositories" 
+                                    className="btn-secondary flex items-center space-x-2"
+                                >
+                                    <span>📊</span>
+                                    <span>View Repositories</span>
+                                </Link>
+                                <Link 
+                                    href="/enhanced-dashboard" 
+                                    className="btn-primary flex items-center space-x-2"
+                                >
+                                    <span>🚀</span>
+                                    <span>Try AI Analysis</span>
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Quick Actions */}
-                    <div className="grid md:grid-cols-3 gap-6 mb-8">
+                    <div className="grid md:grid-cols-4 gap-6 mb-8">
                         <Link href="/repositories" className="card p-6 hover:scale-105 transition-transform cursor-pointer">
                             <div className="text-3xl mb-4">📊</div>
-                            <h3 className="text-xl font-bold text-white mb-2">Repository Analysis</h3>
-                            <p className="text-gray-400">Analyze your repositories and get AI-powered insights</p>
+                            <h3 className="text-xl font-bold text-white mb-2">My Repositories</h3>
+                            <p className="text-gray-400">View and manage your GitHub repositories</p>
+                        </Link>
+
+                        <Link href="/enhanced-dashboard" className="card p-6 hover:scale-105 transition-transform cursor-pointer bg-gradient-to-br from-primary-600 to-cyber-600">
+                            <div className="text-3xl mb-4">🚀</div>
+                            <h3 className="text-xl font-bold text-white mb-2">Enhanced Dashboard</h3>
+                            <p className="text-gray-300">AI-powered DevOps insights and metrics</p>
                         </Link>
 
                         <div className="card p-6 hover:scale-105 transition-transform cursor-pointer">

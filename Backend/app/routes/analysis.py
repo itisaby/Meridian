@@ -7,6 +7,7 @@ from typing import Optional
 from ..models import AnalysisRequest
 from ..database import DatabaseManager
 from ..services import AIService, MCPClient
+from ..services.repo_analyzer import repo_analyzer
 from .auth import extract_token_from_header, get_user_from_token
 
 
@@ -39,42 +40,44 @@ async def analyze_repository(analysis_request: AnalysisRequest, authorization: s
         if repo_data["user_id"] != user_data["id"]:
             raise HTTPException(status_code=403, detail="Access denied")
         
-        # Get repository analysis from MCP
-        repo_analysis = await mcp_client.call_tool(
-            "github",
-            "analyze_repository",
-            {"repo_url": repo_data["repo_url"]}
+        # Get GitHub access token for repository analysis
+        github_token = user_data.get("github_access_token")
+        if not github_token:
+            raise HTTPException(status_code=400, detail="GitHub access token required for analysis")
+        
+        # Analyze repository files and patterns
+        repo_analysis = await repo_analyzer.analyze_repository_files(
+            repo_url=repo_data["repo_url"],
+            github_token=github_token
         )
         
-        # Get personalized learning path
-        learning_path = await mcp_client.call_tool(
-            "learning",
-            "generate_learning_path",
-            {
-                "persona": analysis_request.persona,
-                "repo_data": repo_analysis,
-                "user_skills": user_data["skills"]
-            }
-        )
+        if "error" in repo_analysis:
+            raise HTTPException(status_code=400, detail=repo_analysis["error"])
         
-        # Combine with AI analysis
+        # Get AI-powered suggestions using Gemini
         ai_analysis = await ai_service.analyze_with_persona(
-            repo_data=repo_analysis,
+            repo_data=repo_data,
             persona=analysis_request.persona,
             context={
-                "user_role": user_data["role"],
-                "user_skills": user_data["skills"],
-                "learning_path": learning_path
+                "repo_files": repo_analysis.get("repo_files", {}),
+                "user_context": {
+                    "role": user_data.get("role", ""),
+                    "skills": user_data.get("skills", []),
+                    "experience_level": user_data.get("experience_level", "beginner")
+                },
+                "devops_analysis": repo_analysis.get("devops_analysis", {})
             }
         )
         
         # Combine all analysis data
         complete_analysis = {
             "repo_analysis": repo_analysis,
-            "learning_path": learning_path,
             "ai_insights": ai_analysis,
             "persona": analysis_request.persona,
-            "analyzed_at": "2025-09-26T02:00:00Z"
+            "devops_score": ai_analysis.get("devops_score", 0),
+            "suggestions": ai_analysis.get("suggestions", []),
+            "analysis_summary": ai_analysis.get("analysis_summary", "Analysis completed"),
+            "analyzed_at": ai_analysis.get("generated_at", "2025-09-27T18:00:00Z")
         }
         
         # Update repository with analysis data

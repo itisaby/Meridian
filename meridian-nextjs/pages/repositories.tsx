@@ -1,7 +1,9 @@
 import Head from 'next/head'
+import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { withAuth } from '../contexts/AuthContext'
 import { TokenManager } from '../lib/tokenManager'
+import { Breadcrumb } from '../components/ui/Breadcrumb'
 import { Github, Plus, Clock, Star, GitFork, AlertCircle, CheckCircle, X } from 'lucide-react'
 
 interface Repository {
@@ -100,39 +102,6 @@ function RepositoriesPage() {
         }
     }
 
-    const handleAnalyzeRepository = async (repoId: string) => {
-        try {
-            setAnalyzingRepos(prev => new Set(prev).add(repoId))
-
-            const response = await fetch(`/api/repositories/${repoId}/analyze`, {
-                method: 'POST',
-                headers: TokenManager.getAuthHeader()
-            })
-
-            if (response.ok) {
-                // Analysis started - you might want to show a notification
-                // The analysis runs in the background
-                setTimeout(() => {
-                    // Refresh analyzed repositories after some time
-                    fetchRepositories()
-                }, 10000) // Check after 10 seconds
-            } else {
-                const errorData = await response.json()
-                setError(errorData.detail || 'Failed to start analysis')
-            }
-
-        } catch (error) {
-            console.error('Analysis error:', error)
-            setError('Failed to start repository analysis')
-        } finally {
-            setAnalyzingRepos(prev => {
-                const newSet = new Set(prev)
-                newSet.delete(repoId)
-                return newSet
-            })
-        }
-    }
-
     const getDevOpsScore = (analysisData: Record<string, any>): number => {
         return analysisData?.devops_score || 0
     }
@@ -168,6 +137,18 @@ function RepositoriesPage() {
 
             <div className="min-h-screen bg-gradient-to-br from-dark-200 via-dark-100 to-dark-200">
                 <div className="container mx-auto px-4 py-8">
+                    {/* Navigation */}
+                    <div className="flex items-center justify-between mb-6">
+                        <Breadcrumb items={[{ label: 'Repositories', icon: '📊' }]} />
+                        <Link 
+                            href="/enhanced-dashboard" 
+                            className="btn-secondary flex items-center space-x-2"
+                        >
+                            <span>🚀</span>
+                            <span>Enhanced Dashboard</span>
+                        </Link>
+                    </div>
+
                     {/* Header */}
                     <div className="flex items-center justify-between mb-8">
                         <div>
@@ -285,42 +266,43 @@ function RepositoriesPage() {
                                             View on GitHub →
                                         </a>
                                         
-                                        {analyzedRepo ? (
-                                            <div className="flex items-center space-x-2">
-                                                {isAnalyzing ? (
-                                                    <div className="flex items-center space-x-1 text-yellow-400">
-                                                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-400"></div>
-                                                        <span className="text-xs">Analyzing...</span>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center space-x-1 text-green-400">
-                                                        <CheckCircle className="w-3 h-3" />
-                                                        <span className="text-xs">Analyzed</span>
-                                                    </div>
-                                                )}
+                                        <div className="flex items-center space-x-2">
+                                            {analyzedRepo ? (
+                                                <>
+                                                    {isAnalyzing ? (
+                                                        <div className="flex items-center space-x-1 text-yellow-400">
+                                                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-400"></div>
+                                                            <span className="text-xs">Analyzing...</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center space-x-1 text-green-400">
+                                                            <CheckCircle className="w-3 h-3" />
+                                                            <span className="text-xs">Analyzed</span>
+                                                        </div>
+                                                    )}
+                                                    <Link 
+                                                        href={`/enhanced-dashboard?repo=${encodeURIComponent(repo.full_name)}`}
+                                                        className="text-xs bg-gradient-to-r from-primary-500 to-cyber-500 text-white px-3 py-1 rounded-lg hover:shadow-lg transition-all"
+                                                    >
+                                                        🚀 AI Analysis
+                                                    </Link>
+                                                </>
+                                            ) : (
                                                 <button
-                                                    onClick={() => handleAnalyzeRepository(analyzedRepo.id)}
-                                                    disabled={isAnalyzing}
-                                                    className="text-xs btn-secondary py-1 px-2"
+                                                    onClick={() => {
+                                                        // First sync the repo, then analyze
+                                                        handleSyncRepositories().then(() => {
+                                                            // After sync, find the repo and analyze
+                                                            setTimeout(() => fetchRepositories(), 1000)
+                                                        })
+                                                    }}
+                                                    className="text-xs btn-primary py-1 px-3"
                                                 >
-                                                    Re-analyze
+                                                    <Plus className="w-3 h-3 inline mr-1" />
+                                                    Analyze First
                                                 </button>
-                                            </div>
-                                        ) : (
-                                            <button
-                                                onClick={() => {
-                                                    // First sync the repo, then analyze
-                                                    handleSyncRepositories().then(() => {
-                                                        // After sync, find the repo and analyze
-                                                        setTimeout(() => fetchRepositories(), 1000)
-                                                    })
-                                                }}
-                                                className="text-xs btn-primary py-1 px-3"
-                                            >
-                                                <Plus className="w-3 h-3 inline mr-1" />
-                                                Analyze
-                                            </button>
-                                        )}
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Last Updated */}

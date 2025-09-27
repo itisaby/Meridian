@@ -3,6 +3,7 @@ AI and MCP service implementations
 """
 import asyncio
 from typing import Dict, Any
+from .gemini_service import gemini_service
 
 
 class MCPClient:
@@ -70,19 +71,54 @@ class MCPClient:
 
 
 class AIService:
-    """AI service for persona-based analysis"""
+    """AI service for persona-based analysis using Gemini"""
     
     def __init__(self):
-        self.personas = ["student", "professional", "manager"]
+        self.personas = ["Student", "Professional", "Manager"]
     
     async def analyze_with_persona(self, repo_data: dict, persona: str, context: dict) -> dict:
-        """Analyze repository data with persona-specific insights"""
-        await asyncio.sleep(1)  # Simulate AI processing
+        """Analyze repository data with Gemini AI"""
+        try:
+            # Get repository files for analysis
+            repo_files = context.get('repo_files', {})
+            user_context = context.get('user_context', {})
+            
+            # Use Gemini service for real analysis
+            analysis = await gemini_service.analyze_repository_with_persona(
+                repo_data=repo_data,
+                repo_files=repo_files,
+                persona=persona,
+                user_context=user_context
+            )
+            
+            return analysis
+            
+        except Exception as e:
+            # Fallback to mock data if Gemini fails
+            return await self._fallback_analysis(repo_data, persona)
+    
+    async def _fallback_analysis(self, repo_data: dict, persona: str) -> dict:
+        """Fallback analysis if Gemini is unavailable"""
+        await asyncio.sleep(0.5)
         
         base_analysis = {
-            "confidence_score": 0.85,
-            "analysis_version": "1.0",
-            "persona": persona
+            "persona": persona,
+            "devops_score": 65,
+            "suggestions": [
+                {
+                    "category": "CI/CD",
+                    "priority": "High", 
+                    "title": "Add GitHub Actions workflow",
+                    "description": "Automate testing and deployment",
+                    "implementation_steps": ["Create .github/workflows/ci.yml", "Add test automation"],
+                    "resources": ["GitHub Actions docs"],
+                    "estimated_effort": "2 hours",
+                    "business_impact": "Improves code quality and deployment speed"
+                }
+            ],
+            "analysis_summary": "Basic DevOps setup detected. Several improvement opportunities available.",
+            "generated_at": "2025-09-27T18:00:00Z",
+            "model_used": "fallback"
         }
         
         if persona == "student":

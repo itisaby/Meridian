@@ -1,9 +1,14 @@
 """
 Core application configuration and settings
 """
+import os
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+
+# Load environment variables
+load_dotenv()
 
 
 # Application configuration
@@ -68,13 +73,14 @@ def create_app() -> FastAPI:
     )
     
     # Include routers
-    from ..routes import auth, repositories, analysis, collaboration
+    from ..routes import auth, repositories, analysis, collaboration, ai_test
     from ..api import profiles
     
     app.include_router(auth.router)
     app.include_router(repositories.router)
     app.include_router(analysis.router)
     app.include_router(collaboration.router)
+    app.include_router(ai_test.router)
     app.include_router(profiles.router)
     
     # Health check endpoint
