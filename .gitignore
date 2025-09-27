@@ -1,0 +1,7 @@
+node_modules
+.next
+.DS_Store
+server-debug.log
+test_learning_goals.py
+test_profile_system.py
+test-auth-e2e.sh

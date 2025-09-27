@@ -1,0 +1,32 @@
+{
+    "name": "meridian-nextjs",
+    "version": "0.2.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev",
+        "build": "next build",
+        "start": "next start",
+        "lint": "next lint"
+    },
+    "dependencies": {
+        "@auth/core": "^0.34.2",
+        "axios": "^1.7.2",
+        "lucide-react": "^0.428.0",
+        "next": "15.5.4",
+        "next-auth": "^4.24.11",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "socket.io-client": "^4.7.5"
+    },
+    "devDependencies": {
+        "@types/node": "^22.0.0",
+        "@types/react": "^19.0.0",
+        "@types/react-dom": "^19.0.0",
+        "autoprefixer": "^10.4.19",
+        "eslint": "^8.57.0",
+        "eslint-config-next": "15.5.4",
+        "postcss": "^8.4.40",
+        "tailwindcss": "^3.4.7",
+        "typescript": "^5.5.4"
+    }
+}

@@ -1,0 +1,28 @@
+
+> meridian-nextjs@0.2.0 dev
+> next dev
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /Users/arnabmaity/Documents/DevMind/package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * /Users/arnabmaity/Documents/DevMind/meridian-nextjs/package-lock.json
+
+   ▲ Next.js 15.5.4
+   - Local:        http://localhost:3000
+   - Network:      http://10.0.0.156:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1020ms
+ ○ Compiling / ...
+ ✓ Compiled / in 713ms (406 modules)
+ ✓ Compiled in 65ms (406 modules)
+ HEAD / 200 in 1097ms
+(node:90023) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ GET / 200 in 234ms
+ ✓ Compiled /login in 168ms (418 modules)
+ GET /login 200 in 510ms
+ ✓ Compiled in 64ms (386 modules)
