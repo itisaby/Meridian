@@ -16,7 +16,7 @@ export default function SignupPage() {
 
         try {
             const result = await signIn('github', {
-                callbackUrl: '/profile?setup=true',
+                callbackUrl: '/profile-setup',
                 redirect: false
             })
 

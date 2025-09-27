@@ -1,0 +1,221 @@
+
+> meridian-nextjs@0.2.0 dev
+> next dev
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /Users/arnabmaity/Documents/Meridian/package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * /Users/arnabmaity/Documents/Meridian/meridian-nextjs/package-lock.json
+
+   ▲ Next.js 15.5.4
+   - Local:        http://localhost:3000
+   - Network:      http://10.200.63.213:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1198ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ○ Compiling / ...
+ ✓ Compiled / in 601ms (406 modules)
+ ✓ Compiled in 64ms (406 modules)
+🔍 NextAuth Debug: {
+  status: 'loading',
+  hasSession: false,
+  sessionUser: undefined,
+  timestamp: '2025-09-27T18:42:51.051Z'
+}
+ GET / 200 in 975ms
+ ✓ Compiled /api/auth/[...nextauth] in 55ms (195 modules)
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+ GET /api/auth/session 200 in 159ms
+(node:45104) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ Compiled /login in 263ms (443 modules)
+ GET /api/auth/providers 200 in 23ms
+ GET /api/auth/csrf 200 in 2ms
+[next-auth][debug][CREATE_STATE] { value: 'kaVmfSX09HfMklkgMXHLrSqUho6U0tqsIGMwF_eGZXU', maxAge: 900 }
+[next-auth][debug][GET_AUTHORIZATION_URL] {
+  url: 'https://github.com/login/oauth/authorize?client_id=Ov23liYDieYxaooLUesj&scope=read%3Auser%20user%3Aemail%20read%3Aorg%20repo&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fauth%2Fcallback%2Fgithub&state=kaVmfSX09HfMklkgMXHLrSqUho6U0tqsIGMwF_eGZXU',
+  cookies: [
+    {
+      name: 'next-auth.state',
+      value: 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..bnMJWNjiPg_qcpd-.BuohX3nV8Q5CMyOAuE1ZjYz-h7z38oRnDYYl_o3Z5AS7lhO0OkgBtVWr2Z6OpoBpA0eT0RFKyo0qLjxCCW3AKh0uJi-McE-ldcQy35NynWqS0KE0_eCzE-jQaIoKKJ1NvvL8lvMu26MCpv3qeomzDh_iy0XtDKZITprY37OIVd53IO9WG58.-P2Pibg-D1oYs2OWOCZwcQ',
+      options: [Object]
+    }
+  ],
+  provider: {
+    id: 'github',
+    name: 'GitHub',
+    type: 'oauth',
+    authorization: {
+      url: 'https://github.com/login/oauth/authorize',
+      params: [Object]
+    },
+    token: { url: 'https://github.com/login/oauth/access_token', params: {} },
+    userinfo: {
+      url: 'https://api.github.com/user',
+      request: [AsyncFunction: request]
+    },
+    profile: [Function: profile],
+    style: { logo: '/github.svg', bg: '#24292f', text: '#fff' },
+    idToken: false,
+    checks: [ 'state' ],
+    clientId: 'Ov23liYDieYxaooLUesj',
+    clientSecret: '0595775f8d7192bf6190c42014a92fb25f715066',
+    signinUrl: 'http://localhost:3000/api/auth/signin/github',
+    callbackUrl: 'http://localhost:3000/api/auth/callback/github'
+  }
+}
+ POST /api/auth/signin/github 200 in 8ms
+[next-auth][debug][PROFILE_DATA] {
+  OAuthProfile: {
+    login: 'itisaby',
+    id: 69429511,
+    node_id: 'MDQ6VXNlcjY5NDI5NTEx',
+    avatar_url: 'https://avatars.githubusercontent.com/u/69429511?v=4',
+    gravatar_id: '',
+    url: 'https://api.github.com/users/itisaby',
+    html_url: 'https://github.com/itisaby',
+    followers_url: 'https://api.github.com/users/itisaby/followers',
+    following_url: 'https://api.github.com/users/itisaby/following{/other_user}',
+    gists_url: 'https://api.github.com/users/itisaby/gists{/gist_id}',
+    starred_url: 'https://api.github.com/users/itisaby/starred{/owner}{/repo}',
+    subscriptions_url: 'https://api.github.com/users/itisaby/subscriptions',
+    organizations_url: 'https://api.github.com/users/itisaby/orgs',
+    repos_url: 'https://api.github.com/users/itisaby/repos',
+    events_url: 'https://api.github.com/users/itisaby/events{/privacy}',
+    received_events_url: 'https://api.github.com/users/itisaby/received_events',
+    type: 'User',
+    user_view_type: 'private',
+    site_admin: false,
+    name: 'Arnab Maity',
+    company: null,
+    blog: '',
+    location: 'Baltimore',
+    email: 'arnabbibhuti01@gmail.com',
+    hireable: null,
+    bio: 'MSE in CS @JHU | DevOps | ML | SAP',
+    twitter_username: 'ArnabMaity_01',
+    notification_email: null,
+    public_repos: 78,
+    public_gists: 0,
+    followers: 40,
+    following: 15,
+    created_at: '2020-08-09T16:08:38Z',
+    updated_at: '2025-09-27T17:30:16Z',
+    private_gists: 1,
+    total_private_repos: 23,
+    owned_private_repos: 22,
+    disk_usage: 357488,
+    collaborators: 3,
+    two_factor_authentication: true,
+    plan: {
+      name: 'pro',
+      space: 976562499,
+      collaborators: 0,
+      private_repos: 9999
+    }
+  }
+}
+[next-auth][debug][OAUTH_CALLBACK_RESPONSE] {
+  profile: {
+    id: '69429511',
+    name: 'Arnab Maity',
+    email: 'arnabbibhuti01@gmail.com',
+    image: 'https://avatars.githubusercontent.com/u/69429511?v=4'
+  },
+  account: {
+    provider: 'github',
+    type: 'oauth',
+    providerAccountId: '69429511',
+    access_token: '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',
+    token_type: 'bearer',
+    scope: 'read:org,read:user,repo,user:email'
+  },
+  OAuthProfile: {
+    login: 'itisaby',
+    id: 69429511,
+    node_id: 'MDQ6VXNlcjY5NDI5NTEx',
+    avatar_url: 'https://avatars.githubusercontent.com/u/69429511?v=4',
+    gravatar_id: '',
+    url: 'https://api.github.com/users/itisaby',
+    html_url: 'https://github.com/itisaby',
+    followers_url: 'https://api.github.com/users/itisaby/followers',
+    following_url: 'https://api.github.com/users/itisaby/following{/other_user}',
+    gists_url: 'https://api.github.com/users/itisaby/gists{/gist_id}',
+    starred_url: 'https://api.github.com/users/itisaby/starred{/owner}{/repo}',
+    subscriptions_url: 'https://api.github.com/users/itisaby/subscriptions',
+    organizations_url: 'https://api.github.com/users/itisaby/orgs',
+    repos_url: 'https://api.github.com/users/itisaby/repos',
+    events_url: 'https://api.github.com/users/itisaby/events{/privacy}',
+    received_events_url: 'https://api.github.com/users/itisaby/received_events',
+    type: 'User',
+    user_view_type: 'private',
+    site_admin: false,
+    name: 'Arnab Maity',
+    company: null,
+    blog: '',
+    location: 'Baltimore',
+    email: 'arnabbibhuti01@gmail.com',
+    hireable: null,
+    bio: 'MSE in CS @JHU | DevOps | ML | SAP',
+    twitter_username: 'ArnabMaity_01',
+    notification_email: null,
+    public_repos: 78,
+    public_gists: 0,
+    followers: 40,
+    following: 15,
+    created_at: '2020-08-09T16:08:38Z',
+    updated_at: '2025-09-27T17:30:16Z',
+    private_gists: 1,
+    total_private_repos: 23,
+    owned_private_repos: 22,
+    disk_usage: 357488,
+    collaborators: 3,
+    two_factor_authentication: true,
+    plan: {
+      name: 'pro',
+      space: 976562499,
+      collaborators: 0,
+      private_repos: 9999
+    }
+  }
+}
+GitHub OAuth - calling backend with profile: {
+  githubId: 69429511,
+  username: 'itisaby',
+  name: 'Arnab Maity',
+  email: 'arnabbibhuti01@gmail.com'
+}
+Backend response status: 200
+Backend success, user data: {
+  user: {
+    id: '9f753674-7765-4dce-99b7-4baa336af7bf',
+    name: 'Arnab Maity',
+    email: 'arnabbibhuti01@gmail.com',
+    role: 'student',
+    skills: [],
+    created_at: '2025-09-27 06:44:19'
+  },
+  token: 'meridian_token_9f753674-7765-4dce-99b7-4baa336af7bf'
+}
+ GET /api/auth/callback/github?code=4b4a0e7d899cbb378236&state=kaVmfSX09HfMklkgMXHLrSqUho6U0tqsIGMwF_eGZXU 302 in 543ms
+ ✓ Compiled /dashboard in 111ms (447 modules)
+🔍 NextAuth Debug: {
+  status: 'loading',
+  hasSession: false,
+  sessionUser: undefined,
+  timestamp: '2025-09-27T18:43:38.171Z'
+}
+withAuth render: { isLoading: true, isAuthenticated: false, hasUser: false }
+withAuth: showing loading state
+ GET /dashboard 200 in 373ms
+ GET /api/auth/session 200 in 6ms
+ ✓ Compiled /repositories in 154ms (462 modules)
+ ✓ Compiled /api/repositories in 27ms (207 modules)
+ GET /api/repositories 200 in 1205ms
+ GET /api/repositories 200 in 1207ms
+ GET /api/auth/session 200 in 22ms

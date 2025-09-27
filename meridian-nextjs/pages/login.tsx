@@ -23,7 +23,8 @@ export default function LoginPage() {
             if (result?.error) {
                 setError('Failed to authenticate with GitHub')
             } else if (result?.url) {
-                // Redirect to callback URL
+                // Check if we need to redirect to profile setup
+                // This will be handled by the dashboard page
                 window.location.href = result.url
             }
         } catch (error) {

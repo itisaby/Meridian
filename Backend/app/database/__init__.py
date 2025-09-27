@@ -210,7 +210,7 @@ class DatabaseManager:
         cursor = conn.cursor()
         
         cursor.execute(
-            "SELECT id, name, email, role, skills, created_at FROM users WHERE id = ?",
+            "SELECT id, name, email, role, skills, created_at, github_access_token FROM users WHERE id = ?",
             (user_id,)
         )
         
@@ -218,7 +218,7 @@ class DatabaseManager:
         conn.close()
         
         if user_row:
-            user_id, name, email, role, skills_json, created_at = user_row
+            user_id, name, email, role, skills_json, created_at, github_access_token = user_row
             skills = json.loads(skills_json) if skills_json else []
             return {
                 "id": user_id,
@@ -226,28 +226,12 @@ class DatabaseManager:
                 "email": email,
                 "role": role,
                 "skills": skills,
-                "created_at": created_at
+                "created_at": created_at,
+                "github_access_token": github_access_token
             }
         return None
     
     # Repository Operations
-    @staticmethod
-    def create_repository(user_id: str, repo_url: str, repo_name: str = None) -> str:
-        """Create a new repository record"""
-        repo_id = str(uuid.uuid4())
-        
-        conn = DatabaseManager.get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute(
-            "INSERT INTO repositories (id, user_id, repo_url, repo_name) VALUES (?, ?, ?, ?)",
-            (repo_id, user_id, repo_url, repo_name)
-        )
-        
-        conn.commit()
-        conn.close()
-        return repo_id
-    
     @staticmethod
     def get_repository_by_id(repo_id: str) -> Optional[Dict]:
         """Get repository by ID"""
@@ -288,6 +272,82 @@ class DatabaseManager:
         
         conn.commit()
         conn.close()
+
+    @staticmethod
+    def get_user_repositories(user_id: str) -> List[Dict]:
+        """Get all repositories for a user"""
+        conn = DatabaseManager.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            "SELECT id, user_id, repo_url, repo_name, analysis_data, created_at FROM repositories WHERE user_id = ? ORDER BY created_at DESC",
+            (user_id,)
+        )
+        
+        repo_rows = cursor.fetchall()
+        conn.close()
+        
+        repositories = []
+        for repo_row in repo_rows:
+            repo_id, user_id, repo_url, repo_name, analysis_data_json, created_at = repo_row
+            analysis_data = json.loads(analysis_data_json) if analysis_data_json else None
+            repositories.append({
+                "id": repo_id,
+                "user_id": user_id,
+                "repo_url": repo_url,
+                "repo_name": repo_name,
+                "analysis_data": analysis_data,
+                "created_at": created_at
+            })
+        
+        return repositories
+
+    @staticmethod
+    def get_repository_by_url(user_id: str, repo_url: str) -> Optional[Dict]:
+        """Get repository by URL for a specific user"""
+        conn = DatabaseManager.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            "SELECT id, user_id, repo_url, repo_name, analysis_data, created_at FROM repositories WHERE user_id = ? AND repo_url = ?",
+            (user_id, repo_url)
+        )
+        
+        repo_row = cursor.fetchone()
+        conn.close()
+        
+        if repo_row:
+            repo_id, user_id, repo_url, repo_name, analysis_data_json, created_at = repo_row
+            analysis_data = json.loads(analysis_data_json) if analysis_data_json else None
+            return {
+                "id": repo_id,
+                "user_id": user_id,
+                "repo_url": repo_url,
+                "repo_name": repo_name,
+                "analysis_data": analysis_data,
+                "created_at": created_at
+            }
+        return None
+
+    @staticmethod
+    def create_repository(user_id: str, repo_url: str, repo_name: str = None, github_data: Dict = None) -> str:
+        """Create a new repository record"""
+        repo_id = str(uuid.uuid4())
+        
+        conn = DatabaseManager.get_connection()
+        cursor = conn.cursor()
+        
+        # Store GitHub data as analysis data initially
+        initial_analysis = {"github_data": github_data} if github_data else None
+        
+        cursor.execute(
+            "INSERT INTO repositories (id, user_id, repo_url, repo_name, analysis_data) VALUES (?, ?, ?, ?, ?)",
+            (repo_id, user_id, repo_url, repo_name, json.dumps(initial_analysis) if initial_analysis else None)
+        )
+        
+        conn.commit()
+        conn.close()
+        return repo_id
     
     # Collaboration Operations
     @staticmethod
@@ -359,11 +419,15 @@ class DatabaseManager:
     def create_user_from_github(github_id: str, username: str, name: str, email: str = None, 
                                avatar_url: str = None, bio: str = None, location: str = None,
                                company: str = None, blog: str = None, public_repos: int = 0,
-                               followers: int = 0, following: int = 0, access_token: str = None) -> str:
+                               followers: int = 0, following: int = 0, access_token: str = None,
+                               role: str = "professional") -> str:
         """Create a new user from GitHub OAuth data"""
         user_id = str(uuid.uuid4())
-        # Default role for GitHub users is 'developer'
-        role = 'developer'
+        
+        # Validate role
+        valid_roles = ["student", "professional", "manager"]
+        if role not in valid_roles:
+            role = "professional"  # Default fallback
         
         conn = DatabaseManager.get_connection()
         cursor = conn.cursor()
@@ -438,4 +502,19 @@ class DatabaseManager:
             cursor.execute(query, values)
             conn.commit()
         
+        conn.close()
+
+    @staticmethod
+    def update_user_role(user_id: str, role: str):
+        """Update user role"""
+        valid_roles = ["student", "professional", "manager"]
+        if role not in valid_roles:
+            raise ValueError(f"Invalid role. Must be one of: {valid_roles}")
+        
+        conn = DatabaseManager.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("UPDATE users SET role = ? WHERE id = ?", (role, user_id))
+        
+        conn.commit()
         conn.close()

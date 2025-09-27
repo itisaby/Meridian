@@ -7,6 +7,7 @@ interface AuthContextType {
     isLoading: boolean
     isAuthenticated: boolean
     logout: () => Promise<void>
+    updateUser: (updatedUser: any) => void
     session: any
 }
 
@@ -69,9 +70,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 setIsAuthenticatedState(true)
                 console.log('✅ User authenticated and data set')
 
-                // Store access token if available
+                // Store GitHub access token if available
                 if ((session as any).accessToken) {
                     localStorage.setItem('github_token', (session as any).accessToken)
+                }
+
+                // Store Meridian token if available
+                if ((session as any).meridianToken) {
+                    localStorage.setItem('meridian_token', (session as any).meridianToken)
+                    console.log('✅ Meridian token stored in localStorage')
+                } else {
+                    console.log('⚠️ No Meridian token found in session')
                 }
             } else {
                 console.log('❌ No session user found, setting unauthenticated state')
@@ -111,11 +120,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
     }
 
+    const updateUser = (updatedUser: any) => {
+        setUser(updatedUser)
+    }
+
     const contextValue: AuthContextType = {
         user,
         isLoading,
         isAuthenticated: isAuthenticatedState,
         logout,
+        updateUser,
         session
     }
 

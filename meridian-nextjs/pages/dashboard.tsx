@@ -1,10 +1,21 @@
 import Head from 'next/head'
 import Link from 'next/link'
+import { useEffect } from 'react'
+import { useRouter } from 'next/router'
 import { useAuth } from '../contexts/AuthContext'
 import { withAuth } from '../contexts/AuthContext'
 
 function Dashboard() {
     const { user, logout } = useAuth()
+    const router = useRouter()
+
+    // Check if user needs to complete profile setup
+    useEffect(() => {
+        if (user && (!user.role || user.role === 'developer')) {
+            // Redirect to profile setup if no proper role is set
+            router.push('/profile-setup')
+        }
+    }, [user, router])
 
     const handleLogout = async () => {
         await logout()
@@ -45,6 +56,9 @@ function Dashboard() {
                             </Link>
 
                             <div className="flex items-center space-x-6">
+                                <Link href="/repositories" className="text-gray-300 hover:text-primary-400 transition-colors">
+                                    Repositories
+                                </Link>
                                 <Link href="/profile" className="text-gray-300 hover:text-primary-400 transition-colors">
                                     Profile
                                 </Link>
@@ -80,11 +94,11 @@ function Dashboard() {
 
                     {/* Quick Actions */}
                     <div className="grid md:grid-cols-3 gap-6 mb-8">
-                        <div className="card p-6 hover:scale-105 transition-transform cursor-pointer">
+                        <Link href="/repositories" className="card p-6 hover:scale-105 transition-transform cursor-pointer">
                             <div className="text-3xl mb-4">📊</div>
                             <h3 className="text-xl font-bold text-white mb-2">Repository Analysis</h3>
                             <p className="text-gray-400">Analyze your repositories and get AI-powered insights</p>
-                        </div>
+                        </Link>
 
                         <div className="card p-6 hover:scale-105 transition-transform cursor-pointer">
                             <div className="text-3xl mb-4">🎯</div>

@@ -155,6 +155,31 @@ async def logout():
     return {"message": "Successfully logged out"}
 
 
+@router.put("/role")
+async def update_user_role(role_data: dict, authorization: str = Header(None)):
+    """Update user role"""
+    token = extract_token_from_header(authorization)
+    
+    if not token:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    user_data = get_user_from_token(token)
+    if not user_data:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    new_role = role_data.get("role")
+    if not new_role:
+        raise HTTPException(status_code=400, detail="Role is required")
+    
+    try:
+        DatabaseManager.update_user_role(user_data["id"], new_role)
+        return {"message": "Role updated successfully", "role": new_role}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update role: {str(e)}")
+
+
 @router.post("/github", response_model=AuthResponse)
 async def github_auth(github_data: dict):
     """Authenticate or create user from GitHub OAuth"""
@@ -172,6 +197,7 @@ async def github_auth(github_data: dict):
         followers = github_data.get("followers", 0)
         following = github_data.get("following", 0)
         access_token = github_data.get("accessToken")
+        user_role = github_data.get("role")  # New: Get role from request
         
         if not github_id or not username:
             raise HTTPException(status_code=400, detail="Missing required GitHub data")
@@ -197,6 +223,10 @@ async def github_auth(github_data: dict):
                 following=following,
                 access_token=access_token
             )
+            
+            # Update role if provided
+            if user_role:
+                DatabaseManager.update_user_role(user_id, user_role)
         else:
             # Create new user from GitHub data
             user_id = DatabaseManager.create_user_from_github(
@@ -212,7 +242,8 @@ async def github_auth(github_data: dict):
                 public_repos=public_repos,
                 followers=followers,
                 following=following,
-                access_token=access_token
+                access_token=access_token,
+                role=user_role or "professional"  # Default to professional if no role provided
             )
         
         # Get updated user data
