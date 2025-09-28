@@ -2,13 +2,25 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { useRouter } from 'next/router'
 import { useSession, signOut as nextAuthSignOut } from 'next-auth/react'
 
+interface UserType {
+    id: string;
+    name: string;
+    email: string;
+    role?: string;
+    githubId?: string;
+    githubLogin?: string;
+    image?: string;
+    skills?: string[];
+    created_at?: string;
+}
+
 interface AuthContextType {
-    user: any | null
-    isLoading: boolean
-    isAuthenticated: boolean
-    logout: () => Promise<void>
-    updateUser: (updatedUser: any) => void
-    session: any
+    user: UserType | null;
+    isLoading: boolean;
+    isAuthenticated: boolean;
+    logout: () => Promise<void>;
+    updateUser: (updatedUser: UserType) => void;
+    session: any;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)

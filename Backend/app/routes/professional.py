@@ -50,7 +50,7 @@ async def get_professional_dashboard(user_id: str):
                 "role": manager[3]
             }
         
-        # Get projects this professional is working on
+        # Get projects this professional is working on with repository details
         cursor.execute("""
             SELECT p.id, p.name, p.description, p.status, p.priority, 
                    p.repository_url, p.created_at, p.updated_at,
@@ -67,18 +67,45 @@ async def get_professional_dashboard(user_id: str):
         
         projects = []
         for row in cursor.fetchall():
+            project_id = row[0]
+            
+            # Get repositories for this project that the professional is assigned to
+            cursor.execute("""
+                SELECT pr.id, pr.repository_name, pr.repository_url, pr.description, 
+                       pr.technology_stack, pr.primary_language, pr.is_primary,
+                       ra.role as repo_role
+                FROM project_repositories pr
+                LEFT JOIN repository_assignments ra ON pr.id = ra.repository_id AND ra.professional_id = ?
+                WHERE pr.project_id = ? AND pr.is_active = TRUE
+                ORDER BY pr.is_primary DESC, pr.repository_name
+            """, (user_id, project_id))
+            
+            repositories = []
+            for repo_row in cursor.fetchall():
+                repositories.append({
+                    "id": repo_row[0],
+                    "repository_name": repo_row[1],
+                    "repository_url": repo_row[2],
+                    "description": repo_row[3],
+                    "technology_stack": repo_row[4],
+                    "primary_language": repo_row[5],
+                    "is_primary": repo_row[6],
+                    "my_role": repo_row[7]  # Role in this specific repository
+                })
+            
             project = {
                 "id": row[0],
                 "name": row[1],
                 "description": row[2],
                 "status": row[3],
                 "priority": row[4],
-                "repository_url": row[5],
+                "repository_url": row[5],  # Keep for backward compatibility
                 "created_at": row[6],
                 "updated_at": row[7],
-                "my_role": row[8],
+                "my_role": row[8],  # Overall project role
                 "joined_at": row[9],
-                "team_count": row[10]
+                "team_count": row[10],
+                "repositories": repositories  # New: detailed repository info
             }
             projects.append(project)
         

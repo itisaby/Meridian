@@ -35,6 +35,10 @@ from manager_tools import (
     project_risk_assessment,
     team_performance_optimization
 )
+from devops_culture_tools import (
+    devops_culture_assessment,
+    personalized_devops_guidance
+)
 
 # Load environment variables
 load_dotenv()
@@ -424,6 +428,43 @@ Please provide a detailed, actionable response based on the context provided.
                     )]
                 )
                 
+            # DevOps Culture Tools
+            elif tool_name == "devops_culture_assessment":
+                result = await devops_culture_assessment(
+                    assessment_context=arguments.get("assessment_context", {}),
+                    analysis_type=arguments.get("analysis_type", "comprehensive"),
+                    gemini_model=self.gemini_model
+                )
+                return CallToolResult(
+                    content=[TextContent(
+                        type="text",
+                        text=json.dumps({
+                            "result": result,
+                            "preview": f"DevOps culture assessment completed for team {result.get('team_name', 'Unknown')}",
+                            "tool": "devops_culture_assessment",
+                            "execution_time": 2500
+                        })
+                    )]
+                )
+                
+            elif tool_name == "personalized_devops_guidance":
+                result = await personalized_devops_guidance(
+                    user_context=arguments.get("user_context", {}),
+                    guidance_type=arguments.get("guidance_type", "comprehensive"),
+                    gemini_model=self.gemini_model
+                )
+                return CallToolResult(
+                    content=[TextContent(
+                        type="text", 
+                        text=json.dumps({
+                            "result": result,
+                            "preview": f"Personalized DevOps guidance generated for {result.get('user_context', {}).get('name', 'user')}",
+                            "tool": "personalized_devops_guidance",
+                            "execution_time": 1800
+                        })
+                    )]
+                )
+                
             else:
                 return CallToolResult(
                     content=[TextContent(
@@ -559,9 +600,52 @@ Please provide a detailed, actionable response based on the context provided.
             )
         ]
         
+        # DevOps Culture Tools
+        devops_culture_tools = [
+            Tool(
+                name="devops_culture_assessment",
+                description="Comprehensive AI-powered DevOps culture assessment for teams",
+                inputSchema={
+                    "type": "object", 
+                    "properties": {
+                        "assessment_context": {
+                            "type": "object",
+                            "description": "Team assessment context including team info, responses, and metrics"
+                        },
+                        "analysis_type": {
+                            "type": "string", 
+                            "description": "Type of analysis: comprehensive, quick, focused",
+                            "enum": ["comprehensive", "quick", "focused"]
+                        }
+                    },
+                    "required": ["assessment_context"]
+                }
+            ),
+            Tool(
+                name="personalized_devops_guidance",
+                description="Generate personalized DevOps learning and improvement guidance",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "user_context": {
+                            "type": "object",
+                            "description": "User context including profile, projects, and assessments"
+                        },
+                        "guidance_type": {
+                            "type": "string",
+                            "description": "Type of guidance: comprehensive, learning_path, skills_focus",
+                            "enum": ["comprehensive", "learning_path", "skills_focus"]
+                        }
+                    },
+                    "required": ["user_context"]
+                }
+            )
+        ]
+        
         # Return all tools for now (role filtering in call_tool)
         tools.extend(professional_tools)
         tools.extend(manager_tools)
+        tools.extend(devops_culture_tools)
         
         return tools
 

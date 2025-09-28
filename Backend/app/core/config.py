@@ -73,11 +73,12 @@ def create_app() -> FastAPI:
     )
     
     # Include routers
-    from ..routes import auth, repositories, analysis, collaboration, ai_test, ai_analysis, learning_paths, manager, professional
+    from ..routes import auth, repositories, analysis, collaboration, ai_test, ai_analysis, learning_paths, manager, professional, projects_multi_repo, devops_culture
     from ..api import profiles
     
     app.include_router(auth.router)
     app.include_router(repositories.router)
+    app.include_router(projects_multi_repo.router)
     app.include_router(analysis.router)
     app.include_router(collaboration.router)
     app.include_router(ai_test.router)
@@ -86,6 +87,7 @@ def create_app() -> FastAPI:
     app.include_router(learning_paths.router)
     app.include_router(manager.router)
     app.include_router(professional.router)
+    app.include_router(devops_culture.router)
     
     # Health check endpoint
     @app.get("/")

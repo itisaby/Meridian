@@ -37,11 +37,30 @@ interface GitHubStats {
     topAnalysedRepos: Array<{ name: string, score: number }>
 }
 
+interface DevOpsAssessment {
+    assessment_id: string
+    overall_score: number
+    maturity_level: string
+    category_scores: Record<string, number>
+    created_at: string
+}
+
+interface DevOpsStats {
+    total_assessments: number
+    latest_score: number
+    latest_maturity: string
+    improvement: number
+    strongest_category: string
+    assessment_history: DevOpsAssessment[]
+}
+
 function Dashboard() {
     const { user, logout } = useAuth()
     const router = useRouter()
     const [githubStats, setGithubStats] = useState<GitHubStats | null>(null)
     const [loadingStats, setLoadingStats] = useState(true)
+    const [devopsStats, setDevopsStats] = useState<DevOpsStats | null>(null)
+    const [loadingDevOps, setLoadingDevOps] = useState(true)
 
     // Check if user needs to complete profile setup
     useEffect(() => {
@@ -131,6 +150,27 @@ function Dashboard() {
         fetchGithubStats()
     }, [])
 
+    // Fetch DevOps assessment stats
+    useEffect(() => {
+        const fetchDevOpsStats = async () => {
+            if (!user?.id) return;
+
+            try {
+                const response = await fetch(`http://localhost:8000/devops-culture/user-assessments/${user.id}`)
+                if (response.ok) {
+                    const data = await response.json()
+                    setDevopsStats(data)
+                }
+            } catch (error) {
+                console.error('Error fetching DevOps stats:', error)
+            } finally {
+                setLoadingDevOps(false)
+            }
+        }
+
+        fetchDevOpsStats()
+    }, [user?.id])
+
     const handleLogout = async () => {
         await logout()
     }
@@ -214,6 +254,93 @@ function Dashboard() {
                         <p className="text-xl text-gray-300">
                             Ready to continue your DevOps journey as a {getRoleDisplayName(user?.role || '')}?
                         </p>
+                    </div>
+
+                    {/* DevOps Culture Assessment Section */}
+                    <div className="card p-8 mb-8 bg-gradient-to-r from-green-600/20 via-blue-600/20 to-purple-600/20 border border-green-500/30">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center space-x-4">
+                                <div className="text-4xl">🎯</div>
+                                <div>
+                                    <h2 className="text-2xl font-bold text-white mb-2">
+                                        DevOps Culture Navigator
+                                        <span className="ml-2 text-xs bg-green-500 text-white px-2 py-1 rounded-full">PERSONALIZED</span>
+                                    </h2>
+                                    <p className="text-gray-300">
+                                        Assess your DevOps maturity and get AI-powered guidance for cultural transformation
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex space-x-3">
+                                <Link
+                                    href="/devops-navigator"
+                                    className="btn-secondary flex items-center space-x-2"
+                                >
+                                    <span>📊</span>
+                                    <span>View History</span>
+                                </Link>
+                                <Link
+                                    href="/devops-assessment"
+                                    className="btn-primary flex items-center space-x-2 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
+                                >
+                                    <span>🚀</span>
+                                    <span>Start Assessment</span>
+                                </Link>
+                            </div>
+                        </div>
+
+                        {/* DevOps Stats */}
+                        {devopsStats && !loadingDevOps ? (
+                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                                <div className="bg-green-600/10 rounded-lg p-4 text-center border border-green-500/20">
+                                    <div className="text-2xl font-bold text-green-400 mb-1">{devopsStats.latest_score}%</div>
+                                    <div className="text-xs text-gray-400">Current Score</div>
+                                    <div className="text-sm text-green-300 mt-1">{devopsStats.latest_maturity}</div>
+                                </div>
+                                <div className="bg-blue-600/10 rounded-lg p-4 text-center border border-blue-500/20">
+                                    <div className="text-2xl font-bold text-blue-400 mb-1">{devopsStats.total_assessments}</div>
+                                    <div className="text-xs text-gray-400">Assessments</div>
+                                    <div className="text-sm text-blue-300 mt-1">Completed</div>
+                                </div>
+                                <div className="bg-purple-600/10 rounded-lg p-4 text-center border border-purple-500/20">
+                                    <div className="text-2xl font-bold text-purple-400 mb-1 flex items-center justify-center">
+                                        {devopsStats.improvement >= 0 ? '📈' : '📉'}
+                                        <span className="ml-1">{Math.abs(devopsStats.improvement)}%</span>
+                                    </div>
+                                    <div className="text-xs text-gray-400">Improvement</div>
+                                    <div className="text-sm text-purple-300 mt-1">
+                                        {devopsStats.improvement >= 0 ? 'Growing' : 'Declining'}
+                                    </div>
+                                </div>
+                                <div className="bg-yellow-600/10 rounded-lg p-4 text-center border border-yellow-500/20">
+                                    <div className="text-2xl font-bold text-yellow-400 mb-1">🏆</div>
+                                    <div className="text-xs text-gray-400">Strongest</div>
+                                    <div className="text-sm text-yellow-300 mt-1">{devopsStats.strongest_category}</div>
+                                </div>
+                            </div>
+                        ) : loadingDevOps ? (
+                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                                {[1, 2, 3, 4].map((i) => (
+                                    <div key={i} className="bg-gray-600/10 rounded-lg p-4 animate-pulse">
+                                        <div className="h-8 bg-gray-600 rounded mb-2"></div>
+                                        <div className="h-4 bg-gray-600 rounded mb-1"></div>
+                                        <div className="h-4 bg-gray-600 rounded"></div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-8 bg-gray-600/10 rounded-lg border border-gray-500/20">
+                                <div className="text-4xl mb-4">🚀</div>
+                                <h3 className="text-lg font-semibold text-white mb-2">Start Your DevOps Journey</h3>
+                                <p className="text-gray-400 mb-4">Take your first assessment to get personalized insights</p>
+                                <Link
+                                    href="/devops-assessment"
+                                    className="btn-primary bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
+                                >
+                                    Take Assessment Now
+                                </Link>
+                            </div>
+                        )}
                     </div>
 
                     {/* AI Feature Spotlight */}
@@ -394,6 +521,76 @@ function Dashboard() {
                             </div>
                         ) : null}
                     </div>
+
+                    {/* Recent DevOps Assessments */}
+                    {devopsStats && devopsStats.total_assessments > 0 && (
+                        <div className="card p-6 mb-8">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center space-x-3">
+                                    <Target className="w-8 h-8 text-green-300" />
+                                    <h2 className="text-2xl font-bold text-white">Recent DevOps Assessments</h2>
+                                </div>
+                                <Link href="/devops-navigator" className="text-green-400 hover:text-green-300 text-sm">
+                                    View All →
+                                </Link>
+                            </div>
+
+                            <div className="grid gap-4">
+                                {devopsStats.assessment_history.map((assessment) => (
+                                    <Link
+                                        key={assessment.assessment_id}
+                                        href={`/devops-results?assessment_id=${assessment.assessment_id}`}
+                                        className="block p-4 bg-dark-100/50 rounded-lg border border-gray-600/30 hover:border-green-500/50 transition-colors"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center space-x-4">
+                                                <div className="text-2xl">
+                                                    {assessment.maturity_level === 'Expert' && '🌟'}
+                                                    {assessment.maturity_level === 'Advanced' && '🚀'}
+                                                    {assessment.maturity_level === 'Intermediate' && '⚡'}
+                                                    {assessment.maturity_level === 'Developing' && '📈'}
+                                                    {assessment.maturity_level === 'Novice' && '🌱'}
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center space-x-3">
+                                                        <span className="text-lg font-semibold text-white">
+                                                            {Math.round(assessment.overall_score)}% - {assessment.maturity_level}
+                                                        </span>
+                                                        <span className="text-sm text-gray-400">
+                                                            {new Date(assessment.created_at).toLocaleDateString()}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center space-x-2 mt-1">
+                                                        {Object.entries(assessment.category_scores).map(([category, score]) => (
+                                                            <div
+                                                                key={category}
+                                                                className="text-xs px-2 py-1 rounded"
+                                                                style={{
+                                                                    backgroundColor: score >= 70 ? 'rgba(34, 197, 94, 0.2)' :
+                                                                        score >= 50 ? 'rgba(251, 191, 36, 0.2)' :
+                                                                            'rgba(239, 68, 68, 0.2)',
+                                                                    color: score >= 70 ? 'rgb(34, 197, 94)' :
+                                                                        score >= 50 ? 'rgb(251, 191, 36)' :
+                                                                            'rgb(239, 68, 68)'
+                                                                }}
+                                                            >
+                                                                {category}: {Math.round(score)}%
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="text-gray-400">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Quick Actions */}
                     <div className="grid md:grid-cols-4 gap-6 mb-8">
