@@ -166,6 +166,8 @@ npm run dev
 - **Learning Paths**: Educational content and progress tracking
 - **Analytics**: Performance metrics and insights storage
 
+📋 **[View Detailed Architecture Diagram](ARCHITECTURE.md)** - Complete system architecture, data flow, security layers, and deployment strategy.
+
 ---
 
 ## 🤖 AI Implementation
