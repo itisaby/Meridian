@@ -173,6 +173,16 @@ function Dashboard() {
                                 <Link href="/repositories" className="text-gray-300 hover:text-primary-400 transition-colors">
                                     Repositories
                                 </Link>
+                                {user?.role === 'professional' && (
+                                    <Link href="/professional-dashboard" className="text-gray-300 hover:text-primary-400 transition-colors">
+                                        Professional Dashboard
+                                    </Link>
+                                )}
+                                {user?.role === 'manager' && (
+                                    <Link href="/manager-dashboard" className="text-gray-300 hover:text-primary-400 transition-colors">
+                                        Manager Dashboard
+                                    </Link>
+                                )}
                                 <Link href="/profile" className="text-gray-300 hover:text-primary-400 transition-colors">
                                     Profile
                                 </Link>
