@@ -86,6 +86,17 @@ function EnhancedDashboard() {
     const [loading, setLoading] = useState(true)
     const [selectedPersona, setSelectedPersona] = useState<'Student' | 'Professional' | 'Manager'>('Professional')
     const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false)
+    const [activeTab, setActiveTab] = useState<'overview' | 'learning-paths' | 'analytics' | 'repositories'>('overview')
+
+    // Handle URL tab parameter
+    useEffect(() => {
+        if (router.query.tab) {
+            const tab = router.query.tab as string
+            if (['overview', 'learning-paths', 'analytics', 'repositories'].includes(tab)) {
+                setActiveTab(tab as 'overview' | 'learning-paths' | 'analytics' | 'repositories')
+            }
+        }
+    }, [router.query.tab])
 
     // Set persona based on user role
     useEffect(() => {
@@ -404,8 +415,36 @@ function EnhancedDashboard() {
                         </div>
                     </div>
 
-                    {/* Metrics Overview */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    {/* Tabbed Navigation */}
+                    <div className="mb-8">
+                        <div className="flex space-x-8 border-b border-gray-600">
+                            {[
+                                { id: 'overview', label: '📊 Overview', icon: TrendingUp },
+                                { id: 'learning-paths', label: '🎓 Learning Paths', icon: BookOpen },
+                                { id: 'analytics', label: '📈 Analytics', icon: Brain },
+                                { id: 'repositories', label: '📁 Repositories', icon: Github }
+                            ].map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id as 'overview' | 'learning-paths' | 'analytics' | 'repositories')}
+                                    className={`flex items-center space-x-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                                        activeTab === tab.id
+                                            ? 'border-primary-500 text-primary-400'
+                                            : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-400'
+                                    }`}
+                                >
+                                    <tab.icon className="w-4 h-4" />
+                                    <span>{tab.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Tab Content */}
+                    {activeTab === 'overview' && (
+                        <div>
+                            {/* Metrics Overview */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                         <div className="card p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center space-x-2">
@@ -650,58 +689,89 @@ function EnhancedDashboard() {
                     </div>
 
                     {/* Learning Paths Section */}
-                    {aiInsights && (
-                        <div className="mb-8">
-                            <div className="card p-6">
-                                <div className="flex items-center space-x-2 mb-6">
-                                    <BookOpen className="w-6 h-6 text-blue-400" />
-                                    <h2 className="text-xl font-bold text-white">Personalized Learning Paths</h2>
-                                    <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">
-                                        Based on AI Analysis
-                                    </span>
+                        </div>
+                    )}
+
+                    {activeTab === 'learning-paths' && (
+                        <div>
+                            <div className="mb-8">
+                                <div className="card p-6">
+                                    <div className="flex items-center space-x-2 mb-6">
+                                        <BookOpen className="w-6 h-6 text-blue-400" />
+                                        <h2 className="text-xl font-bold text-white">Personalized Learning Paths</h2>
+                                        <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">
+                                            AI-Powered Education
+                                        </span>
+                                    </div>
+                                    <LearningPaths 
+                                        userId={user?.id || 'demo-user'} 
+                                        repositoryName={router.query.repo as string}
+                                    />
                                 </div>
-                                <LearningPaths userId={user?.id || 'demo-user'} />
                             </div>
                         </div>
                     )}
 
-                    {/* Recent Activity */}
-                    <div className="card p-6">
-                        <div className="flex items-center space-x-2 mb-6">
-                            <TrendingUp className="w-6 h-6 text-green-400" />
-                            <h2 className="text-xl font-bold text-white">Recent Activity</h2>
-                        </div>
-
-                        <div className="space-y-4">
-                            {repositories.slice(0, 5).map((repo) => (
-                                <div key={repo.id} className="flex items-center justify-between py-3 border-b border-gray-600 last:border-b-0">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                                        <div>
-                                            <h4 className="text-white font-medium">{repo.name}</h4>
-                                            <p className="text-gray-400 text-sm">
-                                                {repo.description || 'No description'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="text-gray-400 text-sm">
-                                            Updated {new Date(repo.updated_at).toLocaleDateString()}
-                                        </div>
-                                        <div className="flex items-center space-x-2 text-xs text-gray-500">
-                                            {repo.language && (
-                                                <span className="flex items-center space-x-1">
-                                                    <div className="w-2 h-2 bg-primary-400 rounded-full"></div>
-                                                    <span>{repo.language}</span>
-                                                </span>
-                                            )}
-                                            <span>⭐ {repo.stars}</span>
-                                        </div>
-                                    </div>
+                    {activeTab === 'analytics' && (
+                        <div>
+                            {/* Analysis Chart and Recent Activity */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                                {/* Analysis Score Trends Chart */}
+                                <div className="lg:col-span-2">
+                                    <AnalysisChart data={analysisHistory} />
                                 </div>
-                            ))}
+
+                                {/* Recent Activity */}
+                                <div className="lg:col-span-1">
+                                    <RecentActivity 
+                                        repositoryFullName={selectedRepository?.full_name || ''} 
+                                    />
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    )}
+
+                    {activeTab === 'repositories' && (
+                        <div>
+                            {/* Repository Management */}
+                            <div className="card p-6">
+                                <div className="flex items-center space-x-2 mb-6">
+                                    <Github className="w-6 h-6 text-gray-300" />
+                                    <h2 className="text-xl font-bold text-white">Repository Management</h2>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {repositories.slice(0, 10).map((repo) => (
+                                        <div key={repo.id} className="flex items-center justify-between py-3 border-b border-gray-600 last:border-b-0">
+                                            <div className="flex items-center space-x-3">
+                                                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                                                <div>
+                                                    <h4 className="text-white font-medium">{repo.name}</h4>
+                                                    <p className="text-gray-400 text-sm">
+                                                        {repo.description || 'No description'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-gray-400 text-sm">
+                                                    Updated {new Date(repo.updated_at).toLocaleDateString()}
+                                                </div>
+                                                <div className="flex items-center space-x-2 text-xs text-gray-500">
+                                                    {repo.language && (
+                                                        <span className="flex items-center space-x-1">
+                                                            <div className="w-2 h-2 bg-primary-400 rounded-full"></div>
+                                                            <span>{repo.language}</span>
+                                                        </span>
+                                                    )}
+                                                    <span>⭐ {repo.stars}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

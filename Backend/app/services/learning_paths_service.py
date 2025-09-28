@@ -365,26 +365,31 @@ class LearningPathsService:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
+            # Prepare the path data as JSON
+            path_data = {
+                'title': learning_path.title,
+                'description': learning_path.description,
+                'category': learning_path.category,
+                'difficulty_level': learning_path.difficulty_level,
+                'total_estimated_hours': learning_path.total_estimated_hours,
+                'learning_goals': learning_path.learning_goals,
+                'success_criteria': learning_path.success_criteria,
+                'modules': [asdict(m) for m in learning_path.modules],
+                'prerequisites': learning_path.prerequisites,
+                'tags': learning_path.tags,
+                'created_from_analysis_id': getattr(learning_path, 'created_from_analysis_id', None)
+            }
+            
             cursor.execute("""
                 INSERT INTO learning_paths 
-                (id, title, description, category, difficulty_level, total_estimated_hours,
-                 learning_goals, success_criteria, modules, prerequisites, tags,
-                 created_from_analysis_id, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, user_id, repo_id, persona, path_data, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
             """, (
                 learning_path.id,
-                learning_path.title,
-                learning_path.description,
-                learning_path.category,
-                learning_path.difficulty_level,
-                learning_path.total_estimated_hours,
-                json.dumps(learning_path.learning_goals),
-                json.dumps(learning_path.success_criteria),
-                json.dumps([asdict(m) for m in learning_path.modules]),
-                json.dumps(learning_path.prerequisites),
-                json.dumps(learning_path.tags),
-                learning_path.created_from_analysis_id,
-                datetime.now().isoformat(),
+                getattr(learning_path, 'user_id', None),
+                getattr(learning_path, 'repo_id', None),
+                getattr(learning_path, 'persona', 'student'),
+                json.dumps(path_data),
                 datetime.now().isoformat()
             ))
             
@@ -394,44 +399,71 @@ class LearningPathsService:
         except Exception as e:
             print(f"Error saving learning path: {e}")
             return False
+            return False
     
     def get_user_learning_paths(self, user_id: str) -> List[Dict[str, Any]]:
         """Get all learning paths for a user"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        # Get learning paths created from user's analyses
+        # Get learning paths for the user from the actual table schema
         cursor.execute("""
-            SELECT lp.*, up.progress_percentage, up.status as progress_status
-            FROM learning_paths lp
-            LEFT JOIN user_learning_progress up ON lp.id = up.learning_path_id AND up.user_id = ?
-            WHERE lp.created_from_analysis_id IN (
-                SELECT id FROM ai_analyses WHERE user_id = ?
-            )
-            ORDER BY lp.created_at DESC
-        """, (user_id, user_id))
+            SELECT id, user_id, repo_id, persona, path_data, created_at
+            FROM learning_paths 
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+        """, (user_id,))
         
         results = cursor.fetchall()
         conn.close()
         
         learning_paths = []
         for row in results:
-            learning_paths.append({
-                'id': row[0],
-                'title': row[1],
-                'description': row[2],
-                'category': row[3],
-                'difficulty_level': row[4],
-                'total_estimated_hours': row[5],
-                'learning_goals': json.loads(row[6]) if row[6] else [],
-                'success_criteria': json.loads(row[7]) if row[7] else [],
-                'modules': json.loads(row[8]) if row[8] else [],
-                'prerequisites': json.loads(row[9]) if row[9] else [],
-                'tags': json.loads(row[10]) if row[10] else [],
-                'created_from_analysis_id': row[11],
-                'progress_percentage': row[14] or 0,
-                'progress_status': row[15] or 'not_started'
-            })
+            try:
+                # Parse the path_data JSON
+                path_data = json.loads(row[4]) if row[4] else {}
+                
+                # Create a learning path dict with fallback values
+                learning_path = {
+                    'id': row[0],
+                    'title': path_data.get('title', 'Untitled Learning Path'),
+                    'description': path_data.get('description', 'No description available'),
+                    'category': path_data.get('category', 'General'),
+                    'difficulty_level': path_data.get('difficulty_level', 'intermediate'),
+                    'total_estimated_hours': path_data.get('total_estimated_hours', 8),
+                    'learning_goals': path_data.get('learning_goals', []),
+                    'success_criteria': path_data.get('success_criteria', []),
+                    'modules': path_data.get('modules', []),
+                    'prerequisites': path_data.get('prerequisites', []),
+                    'tags': path_data.get('tags', []),
+                    'repo_id': row[2],
+                    'persona': row[3],
+                    'progress_percentage': 0,  # TODO: Add progress tracking
+                    'progress_status': 'not_started',
+                    'created_at': row[5]
+                }
+                learning_paths.append(learning_path)
+            except (json.JSONDecodeError, Exception) as e:
+                print(f"Error parsing learning path data: {e}")
+                # Add a minimal learning path entry even if parsing fails
+                learning_paths.append({
+                    'id': row[0],
+                    'title': 'Learning Path (Data Error)',
+                    'description': 'Error parsing learning path data',
+                    'category': 'General',
+                    'difficulty_level': 'intermediate',
+                    'total_estimated_hours': 0,
+                    'learning_goals': [],
+                    'success_criteria': [],
+                    'modules': [],
+                    'prerequisites': [],
+                    'tags': [],
+                    'repo_id': row[2],
+                    'persona': row[3],
+                    'progress_percentage': 0,
+                    'progress_status': 'not_started',
+                    'created_at': row[5]
+                })
         
         return learning_paths
     

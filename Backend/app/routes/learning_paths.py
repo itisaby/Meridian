@@ -448,3 +448,24 @@ async def get_learning_dashboard_summary(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get dashboard summary: {str(e)}")
+
+
+@router.get("/user-paths-by-id")
+async def get_user_learning_paths_by_id(user_id: str = Query(...)):
+    """
+    Get learning paths for a specific user by user_id (for development/testing)
+    This bypasses authentication and directly accepts user_id as parameter
+    """
+    try:
+        # Get user's learning paths directly by user_id
+        learning_paths = learning_paths_service.get_user_learning_paths(user_id)
+        
+        return {
+            "status": "success",
+            "learning_paths": learning_paths,
+            "total_count": len(learning_paths),
+            "user_id": user_id
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get learning paths for user {user_id}: {str(e)}")

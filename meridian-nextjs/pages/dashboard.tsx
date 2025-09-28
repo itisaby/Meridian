@@ -411,29 +411,34 @@ function Dashboard() {
                             </div>
                         </Link>
 
-                        <div className="card p-6 hover:scale-105 transition-transform cursor-pointer group opacity-75">
-                            <div className="text-3xl mb-4 group-hover:scale-110 transition-transform">🎯</div>
-                            <h3 className="text-xl font-bold text-white mb-2">Learning Paths</h3>
-                            <p className="text-gray-400">Personalized learning based on analysis results</p>
-                            <div className="mt-3 pt-3 border-t border-gray-600">
-                                <div className="flex items-center justify-between text-xs text-gray-500">
-                                    <span>Coming Soon</span>
-                                    <Target className="w-3 h-3" />
+                        <Link href="/enhanced-dashboard?tab=learning-paths">
+                            <div className="card p-6 hover:scale-105 transition-transform cursor-pointer group">
+                                <div className="text-3xl mb-4 group-hover:scale-110 transition-transform">🎯</div>
+                                <h3 className="text-xl font-bold text-white mb-2">Learning Paths</h3>
+                                <p className="text-gray-400">Personalized learning based on analysis results</p>
+                                <div className="mt-3 pt-3 border-t border-gray-600">
+                                    <div className="flex items-center justify-between text-xs text-primary-400">
+                                        <span>Start Learning</span>
+                                        <Target className="w-3 h-3" />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </Link>
 
-                        <div className="card p-6 hover:scale-105 transition-transform cursor-pointer group opacity-75">
-                            <div className="text-3xl mb-4 group-hover:scale-110 transition-transform">🤝</div>
-                            <h3 className="text-xl font-bold text-white mb-2">Team Collaboration</h3>
-                            <p className="text-gray-400">Share insights and collaborate with team members</p>
-                            <div className="mt-3 pt-3 border-t border-gray-600">
-                                <div className="flex items-center justify-between text-xs text-gray-500">
-                                    <span>Coming Soon</span>
-                                    <Github className="w-3 h-3" />
+                        {/* Team Collaboration - Only for Professionals and Managers */}
+                        {user?.role !== 'student' && (
+                            <div className="card p-6 hover:scale-105 transition-transform cursor-pointer group opacity-75">
+                                <div className="text-3xl mb-4 group-hover:scale-110 transition-transform">🤝</div>
+                                <h3 className="text-xl font-bold text-white mb-2">Team Collaboration</h3>
+                                <p className="text-gray-400">Share insights and collaborate with team members</p>
+                                <div className="mt-3 pt-3 border-t border-gray-600">
+                                    <div className="flex items-center justify-between text-xs text-gray-500">
+                                        <span>Coming Soon</span>
+                                        <Github className="w-3 h-3" />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* Role-Specific Content */}
@@ -541,7 +546,7 @@ function Dashboard() {
                         <div className="text-6xl mb-4">🚀</div>
                         <h2 className="text-2xl font-bold text-white mb-4">More Features Coming Soon!</h2>
                         <p className="text-gray-400 mb-6">
-                            We&apos;re working hard to bring you repository analysis, AI-powered insights, and team collaboration features.
+                            We&apos;re working hard to bring you repository analysis, AI-powered insights{user?.role !== 'student' ? ', and team collaboration features' : ' and enhanced learning features'}.
                         </p>
                         <Link href="/">
                             <button className="btn-primary">
