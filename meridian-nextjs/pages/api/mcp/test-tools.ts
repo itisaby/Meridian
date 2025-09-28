@@ -114,7 +114,7 @@ async function callMCPServer(request: any): Promise<{ result?: any; error?: stri
             env: {
                 ...process.env,
                 PYTHONPATH: path.join(process.cwd(), '../mcp-server'),
-                GEMINI_API_KEY: process.env.GEMINI_API_KEY || 'AIzaSyBkoywITTEQ8eBZIKjZoxjTiwo5r_mSP8A',
+                GEMINI_API_KEY: process.env.GEMINI_API_KEY || 'your-gemini-api-key-here',
                 MERIDIAN_BACKEND_URL: 'http://localhost:8000',
                 MERIDIAN_DB_PATH: path.join(process.cwd(), '../Backend/meridian.db')
             }

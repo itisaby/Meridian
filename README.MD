@@ -1,6 +1,12 @@
 # 🧭 Meridian Project Deck & Implementation Checklist
 
-## 📊 **CURRENT PROGRESS STATUS**
+## � **IMPORTANT: Environment Setup Required**
+**Before running the application, please set up your environment variables:**
+- See [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md) for detailed instructions
+- Copy `.env.example` files and add your API keys
+- Never commit `.env` files to version control
+
+## �📊 **CURRENT PROGRESS STATUS**
 
 **Last Updated: September 27, 2025**
 
