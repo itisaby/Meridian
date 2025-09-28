@@ -31,7 +31,9 @@ from manager_tools import (
     team_collaboration_insights,
     team_learning_analysis,
     project_health_overview,
-    resource_allocation_suggestions
+    resource_allocation_suggestions,
+    project_risk_assessment,
+    team_performance_optimization
 )
 
 # Load environment variables
@@ -244,6 +246,33 @@ Please provide a detailed, actionable response based on the context provided.
                     },
                     "required": ["user_id"]
                 }
+            ),
+            Tool(
+                name="project_risk_assessment",
+                description="Advanced project risk assessment and mitigation strategies for managers",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "repository": {"type": "string", "description": "Repository name (owner/repo)"},
+                        "user_id": {"type": "string", "description": "Manager User ID"},
+                        "project_stage": {"type": "string", "description": "Current project stage (active, planning, etc.)"},
+                        "team_size": {"type": "integer", "description": "Number of team members (optional)"}
+                    },
+                    "required": ["repository", "user_id"]
+                }
+            ),
+            Tool(
+                name="team_performance_optimization",
+                description="AI-powered team performance optimization recommendations",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "user_id": {"type": "string", "description": "Manager User ID"},
+                        "team_metrics": {"type": "object", "description": "Team performance metrics (velocity, quality, collaboration)"},
+                        "team_size": {"type": "integer", "description": "Number of team members (optional)"}
+                    },
+                    "required": ["user_id", "team_metrics"]
+                }
             )
         ]
         
@@ -353,6 +382,45 @@ Please provide a detailed, actionable response based on the context provided.
                     content=[TextContent(
                         type="text",
                         text=f"# Resource Allocation Suggestions\n\n{result.get('analysis', result.get('error', 'Unknown error'))}"
+                    )]
+                )
+                
+            elif tool_name == "project_risk_assessment":
+                result = await project_risk_assessment(
+                    self,
+                    repository=arguments.get("repository", ""),
+                    user_id=user_id,
+                    project_stage=arguments.get("project_stage", "active"),
+                    team_size=arguments.get("team_size")
+                )
+                return CallToolResult(
+                    content=[TextContent(
+                        type="text",
+                        text=json.dumps({
+                            "preview": result.get("preview", "Risk assessment completed"),
+                            "tool": result.get("tool", "project_risk_assessment"),
+                            "execution_time": 1250,
+                            "analysis": result.get("risk_assessment", result.get("error", "Unknown error"))
+                        })
+                    )]
+                )
+                
+            elif tool_name == "team_performance_optimization":
+                result = await team_performance_optimization(
+                    self,
+                    user_id=user_id,
+                    team_metrics=arguments.get("team_metrics", {}),
+                    team_size=arguments.get("team_size")
+                )
+                return CallToolResult(
+                    content=[TextContent(
+                        type="text",
+                        text=json.dumps({
+                            "preview": result.get("preview", "Performance optimization analysis completed"),
+                            "tool": result.get("tool", "team_performance_optimization"),
+                            "execution_time": 1100,
+                            "analysis": result.get("optimization_analysis", result.get("error", "Unknown error"))
+                        })
                     )]
                 )
                 

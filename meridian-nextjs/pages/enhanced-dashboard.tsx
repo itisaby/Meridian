@@ -427,11 +427,10 @@ function EnhancedDashboard() {
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id as 'overview' | 'learning-paths' | 'analytics' | 'repositories')}
-                                    className={`flex items-center space-x-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                                        activeTab === tab.id
+                                    className={`flex items-center space-x-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id
                                             ? 'border-primary-500 text-primary-400'
                                             : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-400'
-                                    }`}
+                                        }`}
                                 >
                                     <tab.icon className="w-4 h-4" />
                                     <span>{tab.label}</span>
@@ -445,250 +444,250 @@ function EnhancedDashboard() {
                         <div>
                             {/* Metrics Overview */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div className="card p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center space-x-2">
-                                    <Target className="w-6 h-6 text-primary-400" />
-                                    <h3 className="text-lg font-semibold text-white">Overall Score</h3>
-                                </div>
-                                <span className={`text-2xl font-bold ${getScoreColor(metrics?.overall_score || 0)}`}>
-                                    {metrics?.overall_score || 0}
-                                </span>
-                            </div>
-                            <div className="w-full bg-gray-700 rounded-full h-2">
-                                <div
-                                    className={`h-2 rounded-full ${getScoreBgColor(metrics?.overall_score || 0)}`}
-                                    style={{ width: `${metrics?.overall_score || 0}%` }}
-                                ></div>
-                            </div>
-                        </div>
-
-                        <div className="card p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center space-x-2">
-                                    <GitBranch className="w-6 h-6 text-blue-400" />
-                                    <h3 className="text-lg font-semibold text-white">CI/CD</h3>
-                                </div>
-                                <span className={`text-2xl font-bold ${getScoreColor(metrics?.ci_cd_score || 0)}`}>
-                                    {metrics?.ci_cd_score || 0}
-                                </span>
-                            </div>
-                            <div className="w-full bg-gray-700 rounded-full h-2">
-                                <div
-                                    className={`h-2 rounded-full ${getScoreBgColor(metrics?.ci_cd_score || 0)}`}
-                                    style={{ width: `${metrics?.ci_cd_score || 0}%` }}
-                                ></div>
-                            </div>
-                        </div>
-
-                        <div className="card p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center space-x-2">
-                                    <Shield className="w-6 h-6 text-green-400" />
-                                    <h3 className="text-lg font-semibold text-white">Security</h3>
-                                </div>
-                                <span className={`text-2xl font-bold ${getScoreColor(metrics?.security_score || 0)}`}>
-                                    {metrics?.security_score || 0}
-                                </span>
-                            </div>
-                            <div className="w-full bg-gray-700 rounded-full h-2">
-                                <div
-                                    className={`h-2 rounded-full ${getScoreBgColor(metrics?.security_score || 0)}`}
-                                    style={{ width: `${metrics?.security_score || 0}%` }}
-                                ></div>
-                            </div>
-                        </div>
-
-                        <div className="card p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center space-x-2">
-                                    <BookOpen className="w-6 h-6 text-purple-400" />
-                                    <h3 className="text-lg font-semibold text-white">Documentation</h3>
-                                </div>
-                                <span className={`text-2xl font-bold ${getScoreColor(metrics?.documentation_score || 0)}`}>
-                                    {metrics?.documentation_score || 0}
-                                </span>
-                            </div>
-                            <div className="w-full bg-gray-700 rounded-full h-2">
-                                <div
-                                    className={`h-2 rounded-full ${getScoreBgColor(metrics?.documentation_score || 0)}`}
-                                    style={{ width: `${metrics?.documentation_score || 0}%` }}
-                                ></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Analysis Chart and Recent Activity */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-                        {/* Analysis Score Trends Chart */}
-                        <div className="lg:col-span-2">
-                            <AnalysisChart data={analysisHistory} />
-                        </div>
-
-                        {/* Recent Activity */}
-                        <div className="lg:col-span-1">
-                            <RecentActivity
-                                repositoryFullName={selectedRepository?.full_name || ''}
-                            />
-                        </div>
-                    </div>
-
-                    {/* AI Insights Section */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                        {/* AI Suggestions */}
-                        <div className="card p-6">
-                            <div className="flex items-center space-x-2 mb-6">
-                                <Zap className="w-6 h-6 text-yellow-400" />
-                                <h2 className="text-xl font-bold text-white">AI-Powered Suggestions</h2>
-                                <span className="text-xs bg-primary-500/20 text-primary-300 px-2 py-1 rounded">
-                                    Powered by Gemini AI
-                                </span>
-                            </div>
-
-                            {aiInsights && (
-                                <div className="space-y-4">
-                                    <div className="bg-dark-100/50 rounded-lg p-4">
-                                        <p className="text-gray-300 text-sm mb-2">Analysis Summary</p>
-                                        <p className="text-white">{aiInsights.analysis_summary}</p>
+                                <div className="card p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center space-x-2">
+                                            <Target className="w-6 h-6 text-primary-400" />
+                                            <h3 className="text-lg font-semibold text-white">Overall Score</h3>
+                                        </div>
+                                        <span className={`text-2xl font-bold ${getScoreColor(metrics?.overall_score || 0)}`}>
+                                            {metrics?.overall_score || 0}
+                                        </span>
                                     </div>
-
-                                    {aiInsights.suggestions.slice(0, 3).map((suggestion, index) => (
-                                        <div key={index} className="bg-dark-100/30 rounded-lg p-4 border-l-4 border-primary-500">
-                                            <div className="flex items-start justify-between mb-2">
-                                                <h4 className="text-white font-semibold">{suggestion.title}</h4>
-                                                <span className={`text-xs px-2 py-1 rounded ${getPriorityColor(suggestion.priority)}`}>
-                                                    {suggestion.priority}
-                                                </span>
-                                            </div>
-                                            <p className="text-gray-300 text-sm mb-3">{suggestion.description}</p>
-                                            <div className="flex items-center space-x-4 text-xs text-gray-400">
-                                                <div className="flex items-center space-x-1">
-                                                    <Clock className="w-3 h-3" />
-                                                    <span>{suggestion.estimated_effort}</span>
-                                                </div>
-                                                <div className="flex items-center space-x-1">
-                                                    <Award className="w-3 h-3" />
-                                                    <span>{suggestion.category}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-
-                                    <button className="w-full btn-secondary py-2">
-                                        View All AI Suggestions ({aiInsights.suggestions.length})
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Repository Overview */}
-                        <div className="card p-6">
-                            <div className="flex items-center space-x-2 mb-6">
-                                <Github className="w-6 h-6 text-gray-300" />
-                                <h2 className="text-xl font-bold text-white">
-                                    {selectedRepository ? 'Repository Details' : 'Repository Health'}
-                                </h2>
-                            </div>
-
-                            {selectedRepository ? (
-                                /* Single Repository View */
-                                <div className="space-y-4">
-                                    <div className="bg-gradient-to-r from-primary-600/20 to-cyber-600/20 rounded-lg p-4">
-                                        <h3 className="text-lg font-semibold text-white mb-2">{selectedRepository.name}</h3>
-                                        <p className="text-gray-300 text-sm mb-3">{selectedRepository.description || 'No description available'}</p>
-                                        <div className="grid grid-cols-3 gap-4">
-                                            <div className="text-center">
-                                                <div className="text-xl font-bold text-primary-400 mb-1">{selectedRepository.stars}</div>
-                                                <div className="text-xs text-gray-400">Stars</div>
-                                            </div>
-                                            <div className="text-center">
-                                                <div className="text-xl font-bold text-green-400 mb-1">{selectedRepository.forks}</div>
-                                                <div className="text-xs text-gray-400">Forks</div>
-                                            </div>
-                                            <div className="text-center">
-                                                <div className={`text-xl font-bold mb-1 ${getScoreColor(aiInsights?.devops_score || 0)}`}>
-                                                    {aiInsights?.devops_score || 0}/100
-                                                </div>
-                                                <div className="text-xs text-gray-400">AI DevOps Score</div>
-                                            </div>
-                                        </div>
-                                        {aiInsights && aiInsights.devops_score > 0 && (
-                                            <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
-                                                <div
-                                                    className={`h-2 rounded-full ${getScoreBgColor(aiInsights.devops_score)}`}
-                                                    style={{ width: `${aiInsights.devops_score}%` }}
-                                                ></div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="grid grid-cols-1 gap-3">
-                                        <div className="flex items-center justify-between bg-dark-100/50 rounded-lg p-3">
-                                            <span className="text-gray-300 text-sm">Language</span>
-                                            <span className="text-primary-400 text-sm">{selectedRepository.language || 'N/A'}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between bg-dark-100/50 rounded-lg p-3">
-                                            <span className="text-gray-300 text-sm">Visibility</span>
-                                            <span className={`text-sm ${selectedRepository.private ? 'text-yellow-400' : 'text-green-400'}`}>
-                                                {selectedRepository.private ? 'Private' : 'Public'}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between bg-dark-100/50 rounded-lg p-3">
-                                            <span className="text-gray-300 text-sm">Last Updated</span>
-                                            <span className="text-gray-400 text-sm">{new Date(selectedRepository.updated_at).toLocaleDateString()}</span>
-                                        </div>
+                                    <div className="w-full bg-gray-700 rounded-full h-2">
+                                        <div
+                                            className={`h-2 rounded-full ${getScoreBgColor(metrics?.overall_score || 0)}`}
+                                            style={{ width: `${metrics?.overall_score || 0}%` }}
+                                        ></div>
                                     </div>
                                 </div>
-                            ) : (
-                                /* All Repositories View */
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-dark-100/50 rounded-lg p-4 text-center">
-                                            <div className="text-2xl font-bold text-primary-400 mb-1">
-                                                {repositories.length}
-                                            </div>
-                                            <div className="text-xs text-gray-400">Total Repositories</div>
+
+                                <div className="card p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center space-x-2">
+                                            <GitBranch className="w-6 h-6 text-blue-400" />
+                                            <h3 className="text-lg font-semibold text-white">CI/CD</h3>
                                         </div>
-                                        <div className="bg-dark-100/50 rounded-lg p-4 text-center">
-                                            <div className="text-2xl font-bold text-green-400 mb-1">
-                                                {repositories.filter(r => r.language).length}
-                                            </div>
-                                            <div className="text-xs text-gray-400">Active Projects</div>
+                                        <span className={`text-2xl font-bold ${getScoreColor(metrics?.ci_cd_score || 0)}`}>
+                                            {metrics?.ci_cd_score || 0}
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-gray-700 rounded-full h-2">
+                                        <div
+                                            className={`h-2 rounded-full ${getScoreBgColor(metrics?.ci_cd_score || 0)}`}
+                                            style={{ width: `${metrics?.ci_cd_score || 0}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+
+                                <div className="card p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center space-x-2">
+                                            <Shield className="w-6 h-6 text-green-400" />
+                                            <h3 className="text-lg font-semibold text-white">Security</h3>
                                         </div>
+                                        <span className={`text-2xl font-bold ${getScoreColor(metrics?.security_score || 0)}`}>
+                                            {metrics?.security_score || 0}
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-gray-700 rounded-full h-2">
+                                        <div
+                                            className={`h-2 rounded-full ${getScoreBgColor(metrics?.security_score || 0)}`}
+                                            style={{ width: `${metrics?.security_score || 0}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+
+                                <div className="card p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center space-x-2">
+                                            <BookOpen className="w-6 h-6 text-purple-400" />
+                                            <h3 className="text-lg font-semibold text-white">Documentation</h3>
+                                        </div>
+                                        <span className={`text-2xl font-bold ${getScoreColor(metrics?.documentation_score || 0)}`}>
+                                            {metrics?.documentation_score || 0}
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-gray-700 rounded-full h-2">
+                                        <div
+                                            className={`h-2 rounded-full ${getScoreBgColor(metrics?.documentation_score || 0)}`}
+                                            style={{ width: `${metrics?.documentation_score || 0}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Analysis Chart and Recent Activity */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                                {/* Analysis Score Trends Chart */}
+                                <div className="lg:col-span-2">
+                                    <AnalysisChart data={analysisHistory} />
+                                </div>
+
+                                {/* Recent Activity */}
+                                <div className="lg:col-span-1">
+                                    <RecentActivity
+                                        repositoryFullName={selectedRepository?.full_name || ''}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* AI Insights Section */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                                {/* AI Suggestions */}
+                                <div className="card p-6">
+                                    <div className="flex items-center space-x-2 mb-6">
+                                        <Zap className="w-6 h-6 text-yellow-400" />
+                                        <h2 className="text-xl font-bold text-white">AI-Powered Suggestions</h2>
+                                        <span className="text-xs bg-primary-500/20 text-primary-300 px-2 py-1 rounded">
+                                            Powered by Gemini AI
+                                        </span>
                                     </div>
 
-                                    {/* Top Languages */}
-                                    <div>
-                                        <h4 className="text-white font-semibold mb-3">Top Languages</h4>
-                                        <div className="space-y-2">
-                                            {Object.entries(
-                                                repositories.reduce((acc, repo) => {
-                                                    if (repo.language) {
-                                                        acc[repo.language] = (acc[repo.language] || 0) + 1
-                                                    }
-                                                    return acc
-                                                }, {} as Record<string, number>)
-                                            ).slice(0, 5).map(([language, count]) => (
-                                                <div key={language} className="flex items-center justify-between">
-                                                    <span className="text-gray-300 text-sm">{language}</span>
-                                                    <span className="text-primary-400 text-sm">{count}</span>
+                                    {aiInsights && (
+                                        <div className="space-y-4">
+                                            <div className="bg-dark-100/50 rounded-lg p-4">
+                                                <p className="text-gray-300 text-sm mb-2">Analysis Summary</p>
+                                                <p className="text-white">{aiInsights.analysis_summary}</p>
+                                            </div>
+
+                                            {aiInsights.suggestions.slice(0, 3).map((suggestion, index) => (
+                                                <div key={index} className="bg-dark-100/30 rounded-lg p-4 border-l-4 border-primary-500">
+                                                    <div className="flex items-start justify-between mb-2">
+                                                        <h4 className="text-white font-semibold">{suggestion.title}</h4>
+                                                        <span className={`text-xs px-2 py-1 rounded ${getPriorityColor(suggestion.priority)}`}>
+                                                            {suggestion.priority}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-gray-300 text-sm mb-3">{suggestion.description}</p>
+                                                    <div className="flex items-center space-x-4 text-xs text-gray-400">
+                                                        <div className="flex items-center space-x-1">
+                                                            <Clock className="w-3 h-3" />
+                                                            <span>{suggestion.estimated_effort}</span>
+                                                        </div>
+                                                        <div className="flex items-center space-x-1">
+                                                            <Award className="w-3 h-3" />
+                                                            <span>{suggestion.category}</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             ))}
+
+                                            <button className="w-full btn-secondary py-2">
+                                                View All AI Suggestions ({aiInsights.suggestions.length})
+                                            </button>
                                         </div>
-                                    </div>
-
-                                    {/* Quick Actions */}
-                                    <div className="pt-4 border-t border-gray-600">
-                                        <Link href="/repositories" className="w-full btn-secondary py-2 text-center block">
-                                            View All Repositories
-                                        </Link>
-                                    </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    </div>
 
-                    {/* Learning Paths Section */}
+                                {/* Repository Overview */}
+                                <div className="card p-6">
+                                    <div className="flex items-center space-x-2 mb-6">
+                                        <Github className="w-6 h-6 text-gray-300" />
+                                        <h2 className="text-xl font-bold text-white">
+                                            {selectedRepository ? 'Repository Details' : 'Repository Health'}
+                                        </h2>
+                                    </div>
+
+                                    {selectedRepository ? (
+                                        /* Single Repository View */
+                                        <div className="space-y-4">
+                                            <div className="bg-gradient-to-r from-primary-600/20 to-cyber-600/20 rounded-lg p-4">
+                                                <h3 className="text-lg font-semibold text-white mb-2">{selectedRepository.name}</h3>
+                                                <p className="text-gray-300 text-sm mb-3">{selectedRepository.description || 'No description available'}</p>
+                                                <div className="grid grid-cols-3 gap-4">
+                                                    <div className="text-center">
+                                                        <div className="text-xl font-bold text-primary-400 mb-1">{selectedRepository.stars}</div>
+                                                        <div className="text-xs text-gray-400">Stars</div>
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <div className="text-xl font-bold text-green-400 mb-1">{selectedRepository.forks}</div>
+                                                        <div className="text-xs text-gray-400">Forks</div>
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <div className={`text-xl font-bold mb-1 ${getScoreColor(aiInsights?.devops_score || 0)}`}>
+                                                            {aiInsights?.devops_score || 0}/100
+                                                        </div>
+                                                        <div className="text-xs text-gray-400">AI DevOps Score</div>
+                                                    </div>
+                                                </div>
+                                                {aiInsights && aiInsights.devops_score > 0 && (
+                                                    <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
+                                                        <div
+                                                            className={`h-2 rounded-full ${getScoreBgColor(aiInsights.devops_score)}`}
+                                                            style={{ width: `${aiInsights.devops_score}%` }}
+                                                        ></div>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="grid grid-cols-1 gap-3">
+                                                <div className="flex items-center justify-between bg-dark-100/50 rounded-lg p-3">
+                                                    <span className="text-gray-300 text-sm">Language</span>
+                                                    <span className="text-primary-400 text-sm">{selectedRepository.language || 'N/A'}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between bg-dark-100/50 rounded-lg p-3">
+                                                    <span className="text-gray-300 text-sm">Visibility</span>
+                                                    <span className={`text-sm ${selectedRepository.private ? 'text-yellow-400' : 'text-green-400'}`}>
+                                                        {selectedRepository.private ? 'Private' : 'Public'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between bg-dark-100/50 rounded-lg p-3">
+                                                    <span className="text-gray-300 text-sm">Last Updated</span>
+                                                    <span className="text-gray-400 text-sm">{new Date(selectedRepository.updated_at).toLocaleDateString()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        /* All Repositories View */
+                                        <div className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="bg-dark-100/50 rounded-lg p-4 text-center">
+                                                    <div className="text-2xl font-bold text-primary-400 mb-1">
+                                                        {repositories.length}
+                                                    </div>
+                                                    <div className="text-xs text-gray-400">Total Repositories</div>
+                                                </div>
+                                                <div className="bg-dark-100/50 rounded-lg p-4 text-center">
+                                                    <div className="text-2xl font-bold text-green-400 mb-1">
+                                                        {repositories.filter(r => r.language).length}
+                                                    </div>
+                                                    <div className="text-xs text-gray-400">Active Projects</div>
+                                                </div>
+                                            </div>
+
+                                            {/* Top Languages */}
+                                            <div>
+                                                <h4 className="text-white font-semibold mb-3">Top Languages</h4>
+                                                <div className="space-y-2">
+                                                    {Object.entries(
+                                                        repositories.reduce((acc, repo) => {
+                                                            if (repo.language) {
+                                                                acc[repo.language] = (acc[repo.language] || 0) + 1
+                                                            }
+                                                            return acc
+                                                        }, {} as Record<string, number>)
+                                                    ).slice(0, 5).map(([language, count]) => (
+                                                        <div key={language} className="flex items-center justify-between">
+                                                            <span className="text-gray-300 text-sm">{language}</span>
+                                                            <span className="text-primary-400 text-sm">{count}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Quick Actions */}
+                                            <div className="pt-4 border-t border-gray-600">
+                                                <Link href="/repositories" className="w-full btn-secondary py-2 text-center block">
+                                                    View All Repositories
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Learning Paths Section */}
                         </div>
                     )}
 
@@ -703,8 +702,8 @@ function EnhancedDashboard() {
                                             AI-Powered Education
                                         </span>
                                     </div>
-                                    <LearningPaths 
-                                        userId={user?.id || 'demo-user'} 
+                                    <LearningPaths
+                                        userId={user?.id || 'demo-user'}
                                         repositoryName={router.query.repo as string}
                                     />
                                 </div>
@@ -723,8 +722,8 @@ function EnhancedDashboard() {
 
                                 {/* Recent Activity */}
                                 <div className="lg:col-span-1">
-                                    <RecentActivity 
-                                        repositoryFullName={selectedRepository?.full_name || ''} 
+                                    <RecentActivity
+                                        repositoryFullName={selectedRepository?.full_name || ''}
                                     />
                                 </div>
                             </div>

@@ -1,13 +1,15 @@
 {
-  "mcpServers": {
-    "meridian-mcp": {
-      "command": "python3.13",
-      "args": ["/Users/arnabmaity/Documents/Meridian/mcp-server/server.py"],
-      "env": {
-        "GEMINI_API_KEY": "AIzaSyBkoywITTEQ8eBZIKjZoxjTiwo5r_mSP8A",
-        "MERIDIAN_BACKEND_URL": "http://localhost:8000",
-        "MERIDIAN_DB_PATH": "/Users/arnabmaity/Documents/Meridian/Backend/meridian.db"
-      }
+    "mcpServers": {
+        "meridian-mcp": {
+            "command": "python3.13",
+            "args": [
+                "/Users/arnabmaity/Documents/Meridian/mcp-server/server.py"
+            ],
+            "env": {
+                "GEMINI_API_KEY": "AIzaSyBkoywITTEQ8eBZIKjZoxjTiwo5r_mSP8A",
+                "MERIDIAN_BACKEND_URL": "http://localhost:8000",
+                "MERIDIAN_DB_PATH": "/Users/arnabmaity/Documents/Meridian/Backend/meridian.db"
+            }
+        }
     }
-  }
 }

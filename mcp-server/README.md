@@ -9,12 +9,14 @@ The Meridian MCP Server provides advanced AI-powered tools for Professional and 
 ## Features
 
 ### Professional Tools 🛠️
+
 - **Advanced Troubleshooting**: AI-powered debugging and issue resolution
-- **Performance Optimization**: Code and infrastructure optimization recommendations  
+- **Performance Optimization**: Code and infrastructure optimization recommendations
 - **Best Practices Audit**: Comprehensive code quality and security analysis
 - **Advanced Learning Suggestions**: Personalized professional development paths
 
 ### Manager Tools 👥
+
 - **Team Collaboration Insights**: Team productivity and collaboration analysis
 - **Team Learning Analysis**: Skill gap identification and learning recommendations
 - **Project Health Overview**: Comprehensive project assessment and risk analysis
@@ -30,12 +32,14 @@ The Meridian MCP Server provides advanced AI-powered tools for Professional and 
 ## Quick Start
 
 1. **Setup Environment**:
+
    ```bash
    cd mcp-server
    ./setup.sh
    ```
 
 2. **Configure Environment**:
+
    ```bash
    cp .env.example .env
    # Edit .env and add your GEMINI_API_KEY
@@ -64,6 +68,7 @@ LOG_LEVEL=INFO
 ### Database Requirements
 
 The server expects a SQLite database with a `users` table:
+
 ```sql
 CREATE TABLE users (
     id TEXT PRIMARY KEY,
@@ -76,11 +81,13 @@ CREATE TABLE users (
 ## Usage Examples
 
 ### List Available Tools
+
 ```bash
 echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}' | python server.py
 ```
 
 ### Call Advanced Troubleshooting (Professional)
+
 ```bash
 echo '{
   "jsonrpc": "2.0",
@@ -98,6 +105,7 @@ echo '{
 ```
 
 ### Call Team Insights (Manager)
+
 ```bash
 echo '{
   "jsonrpc": "2.0",
@@ -123,6 +131,7 @@ python test_client.py
 ```
 
 Or run interactive tests:
+
 ```bash
 python test_client.py --run
 ```
@@ -167,14 +176,14 @@ async def my_new_tool(self, user_id: str, **kwargs) -> CallToolResult:
     user_context = await self.get_user_context(user_id)
     if not user_context or user_context.role not in ['professional', 'manager']:
         return CallToolResult(content=[TextContent(type="text", text="Access denied")])
-    
+
     # 2. Get repository context if needed
     repo_context = await self.get_repository_context(repository, user_id)
-    
+
     # 3. Prepare Gemini prompt with context
     context = {"user_role": user_context.role, "repository_analysis": repo_context}
     prompt = "Your AI analysis prompt here..."
-    
+
     # 4. Call Gemini and return results
     ai_response = await self.call_gemini(prompt, context)
     return CallToolResult(content=[TextContent(type="text", text=ai_response)])
@@ -192,6 +201,7 @@ async def my_new_tool(self, user_id: str, **kwargs) -> CallToolResult:
 ### Debug Mode
 
 Enable debug logging:
+
 ```bash
 export LOG_LEVEL=DEBUG
 python server.py

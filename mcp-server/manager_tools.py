@@ -367,3 +367,188 @@ Provide specific, actionable recommendations for maximizing team effectiveness a
         
     except Exception as e:
         return {"error": f"Error in resource allocation suggestions: {str(e)}"}
+
+
+async def project_risk_assessment(
+    self, repository: str, user_id: str, project_stage: str = "active", team_size: Optional[int] = None
+) -> Dict:
+    """Advanced project risk assessment and mitigation strategies for managers"""
+    try:
+        user_context = await self.get_user_context(user_id)
+        if not user_context or user_context.role != 'manager':
+            return {
+                "error": "Access denied. This feature is only available for Manager users."
+            }
+        
+        repo_context = await self.get_repository_context(repository, user_id)
+        
+        context = {
+            "user_role": user_context.role,
+            "repository": repository,
+            "project_stage": project_stage,
+            "team_size": team_size,
+            "repository_analysis": repo_context
+        }
+        
+        prompt = f"""
+You are a senior project risk management consultant advising a development team manager.
+
+Repository: {repository}
+Project Stage: {project_stage}
+Team Size: {team_size or "Not specified"}
+
+Conduct a comprehensive risk assessment covering:
+
+1. **Technical Risk Analysis**:
+   - Code quality and technical debt risks
+   - Architecture scalability concerns
+   - Dependency vulnerabilities and updates
+   - Testing coverage gaps
+
+2. **Project Timeline Risks**:
+   - Scope creep indicators
+   - Resource allocation bottlenecks
+   - Critical path dependencies
+   - Milestone delivery challenges
+
+3. **Team & Resource Risks**:
+   - Key person dependencies
+   - Skill gap vulnerabilities
+   - Team capacity constraints
+   - Burnout and productivity risks
+
+4. **Process & Communication Risks**:
+   - Documentation inadequacies
+   - Decision-making delays
+   - Stakeholder alignment issues
+   - Change management challenges
+
+5. **Business & Market Risks**:
+   - Competitive pressure impacts
+   - Technology obsolescence risks
+   - Regulatory compliance gaps
+   - Integration complexity
+
+6. **Risk Prioritization Matrix**:
+   - High Impact / High Probability (Critical)
+   - High Impact / Low Probability (Monitor)
+   - Low Impact / High Probability (Mitigate)
+   - Risk scores and rankings
+
+7. **Mitigation Strategies**:
+   - Immediate action items (1-2 weeks)
+   - Short-term improvements (1-3 months)
+   - Long-term strategic changes
+   - Contingency planning recommendations
+
+Provide specific, actionable risk mitigation recommendations with estimated effort and impact.
+"""
+        
+        ai_response = await self.call_gemini(prompt, context)
+        
+        return {
+            "tool": "project_risk_assessment",
+            "repository": repository,
+            "project_stage": project_stage,
+            "risk_assessment": ai_response,
+            "preview": f"Risk Assessment for {repository}: Identified {len(ai_response.split('Risk:')) - 1} potential risk areas with prioritized mitigation strategies."
+        }
+        
+    except Exception as e:
+        return {"error": f"Error in project risk assessment: {str(e)}"}
+
+
+async def team_performance_optimization(
+    self, user_id: str, team_metrics: Dict, team_size: Optional[int] = None
+) -> Dict:
+    """AI-powered team performance optimization recommendations"""
+    try:
+        user_context = await self.get_user_context(user_id)
+        if not user_context or user_context.role != 'manager':
+            return {
+                "error": "Access denied. This feature is only available for Manager users."
+            }
+        
+        context = {
+            "user_role": user_context.role,
+            "team_metrics": team_metrics,
+            "team_size": team_size
+        }
+        
+        velocity = team_metrics.get('velocity', 0)
+        quality = team_metrics.get('quality', 0)
+        collaboration = team_metrics.get('collaboration', 0)
+        
+        prompt = f"""
+You are an elite team performance consultant specializing in software development teams.
+
+Team Performance Metrics:
+- Velocity: {velocity}%
+- Code Quality: {quality}%
+- Team Collaboration: {collaboration}%
+- Team Size: {team_size or "Not specified"}
+
+Provide comprehensive optimization recommendations:
+
+1. **Performance Analysis**:
+   - Strengths and improvement areas
+   - Performance pattern identification
+   - Benchmark comparison insights
+   - Efficiency bottleneck analysis
+
+2. **Velocity Optimization**:
+   - Sprint planning improvements
+   - Task estimation accuracy
+   - Workflow automation opportunities
+   - Productivity enhancement techniques
+
+3. **Quality Enhancement**:
+   - Code review process improvements
+   - Testing strategy optimization
+   - Technical debt reduction plans
+   - Quality gate implementations
+
+4. **Collaboration Boosters**:
+   - Communication channel optimization
+   - Knowledge sharing initiatives
+   - Cross-functional alignment
+   - Team building recommendations
+
+5. **Individual Development**:
+   - Skill gap analysis
+   - Training and mentorship programs
+   - Career development pathways
+   - Performance coaching strategies
+
+6. **Process Improvements**:
+   - Agile/Scrum optimization
+   - CI/CD pipeline enhancements
+   - Documentation streamlining
+   - Meeting efficiency improvements
+
+7. **Technology & Tools**:
+   - Development tool recommendations
+   - Automation opportunities
+   - Monitoring and analytics setup
+   - Infrastructure optimization
+
+8. **Implementation Roadmap**:
+   - Quick wins (1-2 weeks)
+   - Short-term goals (1-3 months)
+   - Long-term objectives (3-6 months)
+   - Success metrics and KPIs
+
+Focus on practical, measurable improvements that directly impact team productivity and job satisfaction.
+"""
+        
+        ai_response = await self.call_gemini(prompt, context)
+        
+        return {
+            "tool": "team_performance_optimization",
+            "team_metrics": team_metrics,
+            "optimization_analysis": ai_response,
+            "preview": f"Team Performance Analysis: Generated optimization recommendations targeting {velocity}% velocity, {quality}% quality, and {collaboration}% collaboration metrics."
+        }
+        
+    except Exception as e:
+        return {"error": f"Error in team performance optimization: {str(e)}"}

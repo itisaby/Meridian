@@ -69,94 +69,94 @@ const LearningPaths: React.FC<LearningPathsProps> = ({ userId, repositoryName, o
     const [selectedPath, setSelectedPath] = useState<LearningPath | null>(null);
     const [activeTab, setActiveTab] = useState<'overview' | 'modules' | 'progress'>('overview');
 
-  const fetchLearningPaths = useCallback(async () => {
-    try {
-      setLoading(true);
-      // Use user-specific endpoint if available, otherwise fall back to demo
-      const endpoint = repositoryName 
-        ? `/api/learning-paths/user/${userId}?repo=${encodeURIComponent(repositoryName)}`
-        : `/api/learning-paths/user/${userId}`;
-      
-      let response = await fetch(endpoint);
-      
-      // If user-specific fails, fall back to demo data
-      if (!response.ok) {
-        console.log(`Repository-specific learning paths not found, using demo data`);
-        response = await fetch(`/api/learning-paths/demo`);
-      }
-      
-      if (response.ok) {
-        const data = await response.json();
-        setLearningPaths(data);
-      }
-    } catch (error) {
-      console.error('Error fetching learning paths:', error);
-      // Fall back to demo data on error
-      try {
-        const response = await fetch(`/api/learning-paths/demo`);
-        if (response.ok) {
-          const data = await response.json();
-          setLearningPaths(data);
+    const fetchLearningPaths = useCallback(async () => {
+        try {
+            setLoading(true);
+            // Use user-specific endpoint if available, otherwise fall back to demo
+            const endpoint = repositoryName
+                ? `/api/learning-paths/user/${userId}?repo=${encodeURIComponent(repositoryName)}`
+                : `/api/learning-paths/user/${userId}`;
+
+            let response = await fetch(endpoint);
+
+            // If user-specific fails, fall back to demo data
+            if (!response.ok) {
+                console.log(`Repository-specific learning paths not found, using demo data`);
+                response = await fetch(`/api/learning-paths/demo`);
+            }
+
+            if (response.ok) {
+                const data = await response.json();
+                setLearningPaths(data);
+            }
+        } catch (error) {
+            console.error('Error fetching learning paths:', error);
+            // Fall back to demo data on error
+            try {
+                const response = await fetch(`/api/learning-paths/demo`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setLearningPaths(data);
+                }
+            } catch (fallbackError) {
+                console.error('Error fetching demo learning paths:', fallbackError);
+            }
+        } finally {
+            setLoading(false);
         }
-      } catch (fallbackError) {
-        console.error('Error fetching demo learning paths:', fallbackError);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [userId, repositoryName]);
+    }, [userId, repositoryName]);
 
-  const generateNewPath = async () => {
-    if (!repositoryName) {
-      alert('Repository information is required to generate learning paths');
-      return;
-    }
-
-    try {
-      setGenerating(true);
-      
-      // First check if there are existing analyses for this repository
-      const analysisHistoryResponse = await fetch(`/api/ai/analysis-history?repo=${encodeURIComponent(repositoryName)}`);
-      
-      let analysisId = null;
-      if (analysisHistoryResponse.ok) {
-        const analyses = await analysisHistoryResponse.json();
-        if (analyses && analyses.length > 0) {
-          // Use the most recent analysis
-          analysisId = analyses[0].id;
+    const generateNewPath = async () => {
+        if (!repositoryName) {
+            alert('Repository information is required to generate learning paths');
+            return;
         }
-      }
 
-      // If no analysis exists, we need to run one first
-      if (!analysisId) {
-        alert('No repository analysis found. Please run an AI analysis first on your repository from the Analytics tab.');
-        return;
-      }
+        try {
+            setGenerating(true);
 
-      // Generate learning paths from existing analysis
-      const learningPathResponse = await fetch(`/api/learning-paths/generate-from-analysis/${analysisId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
+            // First check if there are existing analyses for this repository
+            const analysisHistoryResponse = await fetch(`/api/ai/analysis-history?repo=${encodeURIComponent(repositoryName)}`);
 
-      if (learningPathResponse.ok) {
-        const result = await learningPathResponse.json();
-        console.log('Learning paths generated:', result);
-        
-        // Refresh learning paths
-        await fetchLearningPaths();
-        alert(`Successfully generated ${result.learning_paths?.length || 0} new learning paths!`);
-      } else {
-        const error = await learningPathResponse.json();
-        throw new Error(error.details || 'Failed to generate learning paths');
-      }
-    } catch (error) {
-      console.error('Error generating new path:', error);
-      alert(`Failed to generate new learning paths: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setGenerating(false);
-    }
-  };    useEffect(() => {
+            let analysisId = null;
+            if (analysisHistoryResponse.ok) {
+                const analyses = await analysisHistoryResponse.json();
+                if (analyses && analyses.length > 0) {
+                    // Use the most recent analysis
+                    analysisId = analyses[0].id;
+                }
+            }
+
+            // If no analysis exists, we need to run one first
+            if (!analysisId) {
+                alert('No repository analysis found. Please run an AI analysis first on your repository from the Analytics tab.');
+                return;
+            }
+
+            // Generate learning paths from existing analysis
+            const learningPathResponse = await fetch(`/api/learning-paths/generate-from-analysis/${analysisId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (learningPathResponse.ok) {
+                const result = await learningPathResponse.json();
+                console.log('Learning paths generated:', result);
+
+                // Refresh learning paths
+                await fetchLearningPaths();
+                alert(`Successfully generated ${result.learning_paths?.length || 0} new learning paths!`);
+            } else {
+                const error = await learningPathResponse.json();
+                throw new Error(error.details || 'Failed to generate learning paths');
+            }
+        } catch (error) {
+            console.error('Error generating new path:', error);
+            alert(`Failed to generate new learning paths: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } finally {
+            setGenerating(false);
+        }
+    }; useEffect(() => {
         fetchLearningPaths();
     }, [fetchLearningPaths]);
 
@@ -229,7 +229,7 @@ const LearningPaths: React.FC<LearningPathsProps> = ({ userId, repositoryName, o
                     </p>
                     <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 mb-4 max-w-md mx-auto">
                         <p className="text-xs text-blue-700 dark:text-blue-300">
-                            💡 <strong>Tip:</strong> Make sure you have run an AI analysis on your repository first 
+                            💡 <strong>Tip:</strong> Make sure you have run an AI analysis on your repository first
                             (available in the Analytics tab) before generating learning paths.
                         </p>
                     </div>
@@ -287,8 +287,8 @@ const LearningPaths: React.FC<LearningPathsProps> = ({ userId, repositoryName, o
                             key={tab}
                             onClick={() => setActiveTab(tab as 'overview' | 'modules' | 'progress')}
                             className={`px-4 py-2 capitalize ${activeTab === tab
-                                    ? 'border-b-2 border-blue-500 text-blue-600'
-                                    : 'text-gray-600 hover:text-gray-800'
+                                ? 'border-b-2 border-blue-500 text-blue-600'
+                                : 'text-gray-600 hover:text-gray-800'
                                 }`}
                         >
                             {tab}
@@ -498,7 +498,7 @@ const LearningPaths: React.FC<LearningPathsProps> = ({ userId, repositoryName, o
                 <div>
                     <h2 className="text-2xl font-bold">Learning Paths</h2>
                     <p className="text-gray-600 dark:text-gray-400">
-                        {repositoryName 
+                        {repositoryName
                             ? `Personalized learning journeys for ${repositoryName}`
                             : 'Personalized learning journeys based on your AI analysis'
                         }
