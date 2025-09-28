@@ -6,3 +6,4 @@ test_learning_goals.py
 test_profile_system.py
 test-auth-e2e.sh
 server.log
+venv
