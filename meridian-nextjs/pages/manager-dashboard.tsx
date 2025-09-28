@@ -1,4 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
+// --- Assessment Type ---
+type AIRecommendation = {
+    area: string;
+    action: string;
+    priority: string;
+    effort: string;
+};
+
+type AssessmentHistoryItem = {
+    assessment_id: string;
+    maturity_level: string;
+    overall_score: number;
+    strengths?: string[];
+    improvement_areas?: string[];
+    ai_recommendations?: AIRecommendation[];
+    next_steps?: string[];
+    message?: string;
+    created_at?: string;
+};
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
@@ -121,9 +140,12 @@ interface DashboardData {
 }
 
 interface MCPInsights {
-    preview: string;
-    execution_time: number;
-    tool: string;
+    preview?: string;
+    execution_time?: number;
+    tool?: string;
+    roadmap?: string;
+    metrics?: Record<string, any>;
+    guidance?: string;
 }
 
 export default function ManagerDashboard() {
@@ -132,8 +154,9 @@ export default function ManagerDashboard() {
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'test-analysis'>('overview');
     const [mcpInsights, setMcpInsights] = useState<MCPInsights | null>(null);
+    const [teamAssessments, setTeamAssessments] = useState<Record<string, AssessmentHistoryItem | null>>({});
 
     // Redirect if not manager
     useEffect(() => {
@@ -316,6 +339,7 @@ export default function ManagerDashboard() {
         }
     }, [user?.id, user?.name, user?.email]);
 
+
     useEffect(() => {
         fetchDashboardData();
 
@@ -326,6 +350,34 @@ export default function ManagerDashboard() {
 
         return () => clearInterval(refreshInterval);
     }, [fetchDashboardData]);
+
+    // Fetch assessment for each professional in team when dashboardData changes
+    useEffect(() => {
+        if (!dashboardData) return;
+        const professionals: TeamMember[] = [];
+        dashboardData.projects.forEach(project => {
+            project.team_members.forEach(member => {
+                if (member.role === 'professional') {
+                    professionals.push(member);
+                }
+            });
+        });
+        // Remove duplicates by userId
+        const uniqueProfessionals = Array.from(new Map(professionals.map(m => [m.id, m])).values());
+        uniqueProfessionals.forEach(member => {
+            if (!teamAssessments[member.id]) {
+                fetch(`http://localhost:8000/devops-culture/user-assessments/${member.id}`)
+                    .then(res => res.ok ? res.json() : null)
+                    .then(data => {
+                        if (data && data.assessment_history && data.assessment_history.length > 0) {
+                            setTeamAssessments(prev => ({ ...prev, [member.id]: data.assessment_history[0] }));
+                        } else {
+                            setTeamAssessments(prev => ({ ...prev, [member.id]: null }));
+                        }
+                    });
+            }
+        });
+    }, [dashboardData, teamAssessments]);
 
     // Generate MCP Insights
     const generateMCPInsights = async (insightType: string) => {
@@ -412,10 +464,11 @@ export default function ManagerDashboard() {
         { id: 'overview', name: 'Overview', icon: '📊' },
         { id: 'team', name: 'Team Management', icon: '👥' },
         { id: 'analytics', name: 'Analytics', icon: '📈' },
+    { id: 'test-analysis', name: 'Team Test Analysis', icon: '🧪' },
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-dark-200 via-dark-100 to-dark-200">
+    <div className="min-h-screen bg-gradient-to-br from-dark-200 via-dark-100 to-dark-200" style={{overflow: 'hidden'}}>
             {/* Navigation */}
             <nav className="bg-dark-200/80 backdrop-blur-md border-b border-cyber-500/20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -859,8 +912,8 @@ export default function ManagerDashboard() {
                                     <div className="flex items-center justify-between mb-4">
                                         <h4 className="text-xl font-semibold text-white">{project.name}</h4>
                                         <div className={`px-3 py-1 rounded-full text-xs font-medium ${project.risk_level === 'low' ? 'bg-green-600/20 text-green-300' :
-                                                project.risk_level === 'medium' ? 'bg-yellow-600/20 text-yellow-300' :
-                                                    'bg-red-600/20 text-red-300'
+                                            project.risk_level === 'medium' ? 'bg-yellow-600/20 text-yellow-300' :
+                                                'bg-red-600/20 text-red-300'
                                             }`}>
                                             Risk: {project.risk_level}
                                         </div>
@@ -886,7 +939,7 @@ export default function ManagerDashboard() {
                                                             {member.name.charAt(0)}
                                                         </div>
                                                         <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-dark-200 ${member.availability_status === 'available' ? 'bg-green-500' :
-                                                                member.availability_status === 'busy' ? 'bg-yellow-500' : 'bg-gray-500'
+                                                            member.availability_status === 'busy' ? 'bg-yellow-500' : 'bg-gray-500'
                                                             }`}></div>
                                                     </div>
                                                     <div className="flex-1">
@@ -927,10 +980,10 @@ export default function ManagerDashboard() {
                                 {dashboardData?.recent_activities?.map((activity) => (
                                     <div key={activity.id} className="flex items-start space-x-3 p-3 bg-dark-200/30 rounded-lg hover:bg-dark-200/50 transition-colors">
                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${activity.type === 'commit' ? 'bg-green-600/20 text-green-400' :
-                                                activity.type === 'pull_request' ? 'bg-blue-600/20 text-blue-400' :
-                                                    activity.type === 'issue' ? 'bg-red-600/20 text-red-400' :
-                                                        activity.type === 'review' ? 'bg-purple-600/20 text-purple-400' :
-                                                            'bg-yellow-600/20 text-yellow-400'
+                                            activity.type === 'pull_request' ? 'bg-blue-600/20 text-blue-400' :
+                                                activity.type === 'issue' ? 'bg-red-600/20 text-red-400' :
+                                                    activity.type === 'review' ? 'bg-purple-600/20 text-purple-400' :
+                                                        'bg-yellow-600/20 text-yellow-400'
                                             }`}>
                                             {activity.type === 'commit' ? '💻' :
                                                 activity.type === 'pull_request' ? '🔀' :
@@ -951,124 +1004,57 @@ export default function ManagerDashboard() {
                 )}
 
                 {activeTab === 'analytics' && (
-                    <div className="space-y-6">
-                        {/* Advanced Performance Charts */}
-                        <div className="grid lg:grid-cols-2 gap-6">
-                            {/* Team Velocity Trend with Real Data */}
-                            <div className="bg-dark-100/50 backdrop-blur-sm rounded-xl shadow-xl border border-gray-600/30 p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h4 className="text-lg font-semibold text-white flex items-center">
-                                        <span className="mr-2">📈</span>
-                                        Team Velocity Trend
-                                    </h4>
-                                    <div className="text-sm text-gray-400">Last 6 weeks</div>
+                    <div className="space-y-6" style={{maxHeight: '70vh', overflowY: 'auto'}}>
+                        {/* MCP Integration UI */}
+                        <div className="bg-dark-100/50 rounded-xl shadow-xl border border-cyber-500/30 p-6 mb-6">
+                            <h3 className="text-xl font-semibold text-primary-400 mb-4 flex items-center">
+                                <span className="mr-2">🤖</span>
+                                AI-Powered Recommendations
+                            </h3>
+                            <button
+                                className="btn-primary px-4 py-2 rounded mb-4"
+                                onClick={async () => {
+                                    setLoading(true);
+                                    setError(null);
+                                    try {
+                                        // Find the latest assessment for the first professional in the first project (customize as needed)
+                                        const professional = dashboardData?.projects?.[0]?.team_members?.find(m => m.role === 'professional');
+                                        if (!professional) throw new Error('No professional found');
+                                        const assessmentRes = await fetch(`http://localhost:8000/devops-culture/user-assessments/${professional.id}`);
+                                        if (!assessmentRes.ok) throw new Error('Failed to fetch assessment');
+                                        const assessmentData = await assessmentRes.json();
+                                        const latestAssessment = assessmentData.assessment_history?.[0];
+                                        if (!latestAssessment) throw new Error('No assessment data found');
+                                        // Send assessment to MCP server
+                                        const mcpRes = await fetch('http://localhost:8001/api/mcp/recommendations', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ assessment: latestAssessment }),
+                                        });
+                                        if (!mcpRes.ok) throw new Error('Failed to fetch MCP recommendations');
+                                        const mcpData = await mcpRes.json();
+                                        setMcpInsights(mcpData);
+                                    } catch (err) {
+                                        setError(typeof err === 'object' && err !== null && 'message' in err ? (err as { message: string }).message : String(err));
+                                    } finally {
+                                        setLoading(false);
+                                    }
+                                }}
+                                disabled={loading}
+                            >
+                                {loading ? 'Loading...' : 'Get AI Recommendations'}
+                            </button>
+                            {error && <div className="text-red-400 mb-2">{error}</div>}
+                            {mcpInsights && (
+                                <div className="bg-dark-200/50 rounded p-4 mt-4">
+                                    <h4 className="text-lg font-semibold text-primary-300 mb-2">Transformation Roadmap</h4>
+                                    <pre className="whitespace-pre-wrap text-sm text-gray-300 mb-4">{mcpInsights.roadmap || mcpInsights.preview}</pre>
+                                    <h4 className="text-lg font-semibold text-cyber-300 mb-2">DevOps Metrics</h4>
+                                    <pre className="whitespace-pre-wrap text-sm text-gray-300 mb-4">{mcpInsights.metrics ? JSON.stringify(mcpInsights.metrics, null, 2) : ''}</pre>
+                                    <h4 className="text-lg font-semibold text-green-300 mb-2">Detailed Guidance</h4>
+                                    <pre className="whitespace-pre-wrap text-sm text-gray-300">{mcpInsights.guidance}</pre>
                                 </div>
-                                <Line
-                                    data={{
-                                        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
-                                        datasets: [
-                                            {
-                                                label: 'Average Velocity %',
-                                                data: dashboardData?.projects?.[0]?.performance_trend || [75, 80, 85, 82, 88, 85],
-                                                borderColor: 'rgb(99, 102, 241)',
-                                                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                                                tension: 0.4,
-                                                borderWidth: 3,
-                                                fill: true
-                                            },
-                                            {
-                                                label: 'Quality Score %',
-                                                data: [70, 75, 80, 85, 87, 90],
-                                                borderColor: 'rgb(34, 197, 94)',
-                                                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                                                tension: 0.4,
-                                                borderWidth: 3,
-                                                fill: false
-                                            }
-                                        ]
-                                    }}
-                                    options={{
-                                        responsive: true,
-                                        maintainAspectRatio: false,
-                                        plugins: {
-                                            legend: {
-                                                labels: { color: 'white', font: { size: 12 } }
-                                            },
-                                            tooltip: {
-                                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                                titleColor: 'white',
-                                                bodyColor: 'white'
-                                            }
-                                        },
-                                        scales: {
-                                            x: {
-                                                ticks: { color: 'white' },
-                                                grid: { color: 'rgba(255,255,255,0.1)' }
-                                            },
-                                            y: {
-                                                ticks: { color: 'white' },
-                                                grid: { color: 'rgba(255,255,255,0.1)' },
-                                                min: 0,
-                                                max: 100
-                                            }
-                                        }
-                                    }}
-                                    height={250}
-                                />
-                            </div>
-
-                            {/* Enhanced Project Status Distribution */}
-                            <div className="bg-dark-100/50 backdrop-blur-sm rounded-xl shadow-xl border border-gray-600/30 p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h4 className="text-lg font-semibold text-white flex items-center">
-                                        <span className="mr-2">🎯</span>
-                                        Project Status Overview
-                                    </h4>
-                                </div>
-                                <Doughnut
-                                    data={{
-                                        labels: ['Active', 'Planning', 'Completed', 'On Hold'],
-                                        datasets: [{
-                                            data: [
-                                                dashboardData?.summary?.active_projects || 0,
-                                                Math.max(0, (dashboardData?.summary?.total_projects || 0) - (dashboardData?.summary?.active_projects || 0) - (dashboardData?.summary?.completed_projects || 0)),
-                                                dashboardData?.summary?.completed_projects || 0,
-                                                0
-                                            ],
-                                            backgroundColor: [
-                                                'rgba(34, 197, 94, 0.8)',   // Green for active
-                                                'rgba(251, 191, 36, 0.8)',  // Yellow for planning
-                                                'rgba(59, 130, 246, 0.8)',  // Blue for completed
-                                                'rgba(239, 68, 68, 0.8)'    // Red for on hold
-                                            ],
-                                            borderWidth: 2,
-                                            borderColor: 'rgba(255, 255, 255, 0.2)',
-                                            hoverBackgroundColor: [
-                                                'rgba(34, 197, 94, 1)',
-                                                'rgba(251, 191, 36, 1)',
-                                                'rgba(59, 130, 246, 1)',
-                                                'rgba(239, 68, 68, 1)'
-                                            ]
-                                        }]
-                                    }}
-                                    options={{
-                                        responsive: true,
-                                        maintainAspectRatio: false,
-                                        plugins: {
-                                            legend: {
-                                                labels: { color: 'white', font: { size: 12 } },
-                                                position: 'bottom'
-                                            },
-                                            tooltip: {
-                                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                                titleColor: 'white',
-                                                bodyColor: 'white'
-                                            }
-                                        }
-                                    }}
-                                    height={250}
-                                />
-                            </div>
+                            )}
                         </div>
 
                         {/* Team Performance Metrics */}
@@ -1083,6 +1069,81 @@ export default function ManagerDashboard() {
                                         <span className="text-gray-300">Commits this week</span>
                                         <span className="text-2xl font-bold text-blue-300">{dashboardData?.summary?.total_commits_this_week}</span>
                                     </div>
+                                {activeTab === 'test-analysis' && (
+                                    <div className="space-y-6">
+                                        <div className="bg-dark-100/50 backdrop-blur-sm rounded-xl shadow-xl border border-cyber-500/30 p-6">
+                                            <h3 className="text-xl font-semibold text-primary-400 mb-4 flex items-center">
+                                                <span className="mr-2">🧪</span>
+                                                Team Test Analysis
+                                            </h3>
+                                            {(() => {
+                                                // Gather all professionals from all projects, fallback to any team member with assessment data
+                                                // Gather professionals from all projects and global team list
+                                                const professionals: TeamMember[] = [];
+                                                dashboardData?.projects.forEach(project => {
+                                                    project.team_members.forEach(member => {
+                                                        if (member.role === 'professional' || teamAssessments[member.id]) {
+                                                            professionals.push(member);
+                                                        }
+                                                    });
+                                                });
+                                                // Add professionals from global team list if not already present
+                                                if (dashboardData && dashboardData.team_performance) {
+                                                    dashboardData.team_performance.top_performers.concat(dashboardData.team_performance.underperformers).forEach(member => {
+                                                        if ((member.role === 'professional' || teamAssessments[member.id]) && !professionals.find(m => m.id === member.id)) {
+                                                            professionals.push(member);
+                                                        }
+                                                    });
+                                                }
+                                                // Remove duplicates by userId
+                                                const uniqueProfessionals = Array.from(new Map(professionals.map(m => [m.id, m])).values());
+                                                if (uniqueProfessionals.length === 0) {
+                                                    return <div className="text-gray-500 text-sm">No professionals or assessment data found in your teams.<br/>Debug: professionals={JSON.stringify(professionals)}<br/>teamAssessments={JSON.stringify(teamAssessments)}</div>;
+                                                }
+                                                return (
+                                                    <>
+                                                        <div className="mb-4 p-2 bg-dark-200/30 text-xs text-gray-400 rounded">Debug: professionals={JSON.stringify(uniqueProfessionals)}<br/>teamAssessments={JSON.stringify(teamAssessments)}</div>
+                                                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                            {uniqueProfessionals.map(member => {
+                                                                const assessment = teamAssessments[member.id];
+                                                                return (
+                                                                    <div key={member.id} className="bg-dark-200/40 rounded-lg p-4 border border-gray-700/30">
+                                                                        <div className="flex items-center mb-2">
+                                                                            <img src={member.avatar_url || ''} alt={member.name} className="w-10 h-10 rounded-full mr-3" />
+                                                                            <div>
+                                                                                <div className="font-semibold text-white">{member.name}</div>
+                                                                                <div className="text-xs px-2 py-1 rounded-full bg-blue-700/30 text-blue-300 inline-block">{member.role}</div>
+                                                                            </div>
+                                                                        </div>
+                                                                        {assessment ? (
+                                                                            <div className="text-xs text-gray-300">
+                                                                                <div className="mb-1"><span className="font-semibold text-purple-300">Maturity:</span> {assessment.maturity_level}</div>
+                                                                                <div className="mb-1"><span className="font-semibold text-green-300">Score:</span> {Math.round(assessment.overall_score)}%</div>
+                                                                                {assessment.strengths && assessment.strengths.length > 0 && (
+                                                                                    <div className="mb-1"><span className="font-semibold text-green-400">Strengths:</span> {assessment.strengths.join(', ')}</div>
+                                                                                )}
+                                                                                {assessment.improvement_areas && assessment.improvement_areas.length > 0 && (
+                                                                                    <div className="mb-1"><span className="font-semibold text-yellow-400">Improvements:</span> {assessment.improvement_areas.join(', ')}</div>
+                                                                                )}
+                                                                                {assessment.ai_recommendations && assessment.ai_recommendations.length > 0 && (
+                                                                                    <div className="mb-1"><span className="font-semibold text-blue-400">AI Recommendations:</span> {assessment.ai_recommendations.map((rec: any, idx: number) => (
+                                                                                        <span key={idx} className="mr-2">{rec.action} <span className="text-xs text-gray-400">({rec.priority}, {rec.effort})</span></span>
+                                                                                    ))}</div>
+                                                                                )}
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="text-xs text-gray-500">No assessment data available.</div>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </>
+                                                );
+                                            })()}
+                                        </div>
+                                    </div>
+                                )}
                                     <div className="w-full bg-gray-700 rounded-full h-2">
                                         <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${Math.min(100, (dashboardData?.summary?.total_commits_this_week || 0) / 2)}%` }}></div>
                                     </div>
@@ -1143,14 +1204,14 @@ export default function ManagerDashboard() {
                             <div className="grid md:grid-cols-3 gap-4 mb-6">
                                 {dashboardData?.projects?.map((project) => (
                                     <div key={project.id} className={`p-4 rounded-lg border-2 ${project.risk_level === 'high' ? 'bg-red-600/20 border-red-500/50' :
-                                            project.risk_level === 'medium' ? 'bg-yellow-600/20 border-yellow-500/50' :
-                                                'bg-green-600/20 border-green-500/50'
+                                        project.risk_level === 'medium' ? 'bg-yellow-600/20 border-yellow-500/50' :
+                                            'bg-green-600/20 border-green-500/50'
                                         }`}>
                                         <div className="flex items-center justify-between mb-2">
                                             <h5 className="font-semibold text-white">{project.name}</h5>
                                             <div className={`px-2 py-1 rounded text-xs font-bold ${project.risk_level === 'high' ? 'bg-red-500 text-white' :
-                                                    project.risk_level === 'medium' ? 'bg-yellow-500 text-black' :
-                                                        'bg-green-500 text-white'
+                                                project.risk_level === 'medium' ? 'bg-yellow-500 text-black' :
+                                                    'bg-green-500 text-white'
                                                 }`}>
                                                 {project.risk_level.toUpperCase()}
                                             </div>
